@@ -25,7 +25,7 @@ def create_deck(
     repository = repositories.find()
     repositories.validate_deck_name(name)
     process.require_git()
-    config = load_config(repository.config_file)
+    config = load_config(repository.existing_config_file)
     target = decks.target(repository, config, name)
     if target.exists():
         raise DeckExistsError(
@@ -35,8 +35,9 @@ def create_deck(
 
     vscode.validate(repository.root)
     vscode.validate_settings(repository.root)
-    initialized = repository.answers_file.is_file()
     with repositories.mutation_lock(repository):
+        repositories.migrate_legacy_metadata(repository)
+        initialized = repository.answers_file.is_file()
         if not initialized:
             state = copier.create_repository_environment(
                 repository,
@@ -45,6 +46,7 @@ def create_deck(
                 vcs_ref=vcs_ref,
             )
             if not repository.config_file.exists():
+                repository.marpme_dir.mkdir(parents=True, exist_ok=True)
                 repository.config_file.write_text(
                     yaml.safe_dump(
                         {
@@ -56,7 +58,7 @@ def create_deck(
                     ),
                     encoding="utf-8",
                 )
-            config = load_config(repository.config_file)
+            config = load_config(repository.existing_config_file)
         else:
             state = copier.get_state(repository)
 

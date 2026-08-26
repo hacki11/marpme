@@ -491,7 +491,7 @@ The exact filename and format should follow Copier's supported mechanism.
 Typical example:
 
 ```text
-.copier-answers.yml
+.marpme/copier-answers.yml
 ```
 
 The metadata must include sufficient information to identify:
@@ -1027,7 +1027,7 @@ Repository-level config should be minimal.
 Potential file:
 
 ```text
-.marpme.yml
+.marpme/.marpme.yml
 ```
 
 Example:

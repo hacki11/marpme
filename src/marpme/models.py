@@ -14,11 +14,27 @@ class Repository:
 
     @property
     def answers_file(self) -> Path:
+        return self.marpme_dir / "copier-answers.yml"
+
+    @property
+    def legacy_answers_file(self) -> Path:
         return self.root / ".copier-answers.yml"
 
     @property
+    def existing_answers_file(self) -> Path:
+        return self.answers_file if self.answers_file.is_file() else self.legacy_answers_file
+
+    @property
     def config_file(self) -> Path:
+        return self.marpme_dir / ".marpme.yml"
+
+    @property
+    def legacy_config_file(self) -> Path:
         return self.root / ".marpme.yml"
+
+    @property
+    def existing_config_file(self) -> Path:
+        return self.config_file if self.config_file.is_file() else self.legacy_config_file
 
 
 @dataclass(frozen=True)

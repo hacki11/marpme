@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import yaml
 
 from marpme.errors import (
@@ -13,6 +15,11 @@ from marpme.models import Repository, TemplateState, UpdateResult
 
 class CopierService:
     """Small compatibility boundary around Copier's public Python API."""
+
+    @staticmethod
+    def _answers_file_argument(repository: Repository, *, existing: bool = True) -> Path:
+        path = repository.existing_answers_file if existing else repository.answers_file
+        return path.relative_to(repository.root)
 
     def create_repository_environment(
         self,
@@ -35,13 +42,13 @@ class CopierService:
                 unsafe=False,
                 overwrite=False,
                 cleanup_on_error=True,
-                answers_file=repository.answers_file.name,
+                answers_file=self._answers_file_argument(repository, existing=False),
             )
         except Exception as exc:
             self._raise_copier_error(exc, source)
         if not repository.answers_file.is_file():
             raise CopierFailureError(
-                "The template did not generate .copier-answers.yml, so future updates "
+                "The template did not generate .marpme/copier-answers.yml, so future updates "
                 "would be unsafe.\n\nAdd the standard Copier answers-file template to the "
                 "template repository and retry."
             )
@@ -62,7 +69,7 @@ class CopierService:
                 unsafe=False,
                 overwrite=True,
                 conflict="inline",
-                answers_file=repository.answers_file.name,
+                answers_file=self._answers_file_argument(repository),
             )
         except Exception as exc:
             self._raise_copier_error(exc, before.source or "configured template")
@@ -70,7 +77,7 @@ class CopierService:
         return UpdateResult(before.version, after.version)
 
     def get_state(self, repository: Repository) -> TemplateState:
-        path = repository.answers_file
+        path = repository.existing_answers_file
         if not path.is_file():
             raise NotInitializedError(
                 "Marpme is not initialized in this repository.\n\n"

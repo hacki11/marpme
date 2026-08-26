@@ -41,6 +41,20 @@ class RepositoryService:
             )
         return name
 
+    def migrate_legacy_metadata(self, repository: Repository) -> None:
+        """Move pre-.marpme metadata into the current managed directory."""
+        moves = (
+            (repository.legacy_answers_file, repository.answers_file),
+            (repository.legacy_config_file, repository.config_file),
+        )
+        pending = [(source, destination) for source, destination in moves if source.is_file()]
+        if not pending:
+            return
+        repository.marpme_dir.mkdir(parents=True, exist_ok=True)
+        for source, destination in pending:
+            if not destination.exists():
+                source.replace(destination)
+
     def unresolved_conflicts(self, repository: Repository) -> tuple[Path, ...]:
         result = self.process.run_git(["diff", "--name-only", "--diff-filter=U"], repository.root)
         return tuple(Path(line) for line in result.stdout.splitlines() if line.strip())
