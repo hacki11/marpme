@@ -4,6 +4,7 @@ from marpme.models import UpdateResult
 from marpme.services.copier_service import CopierService
 from marpme.services.process import ProcessService
 from marpme.services.repository import RepositoryService
+from marpme.services.template import TemplateService
 from marpme.services.vscode import VsCodeService
 
 
@@ -25,4 +26,6 @@ def update_environment(vcs_ref: str | None = None) -> UpdateResult:
         vscode.ensure_recommendation(repository.root)
         vscode.ensure_theme_settings(repository.root)
         conflicts = repositories.copier_conflicts(repository)
-    return UpdateResult(result.previous_version, result.current_version, conflicts)
+    state = copier.get_state(repository)
+    changes = TemplateService(process).changelog_changes(state)
+    return UpdateResult(result.previous_version, result.current_version, conflicts, changes)

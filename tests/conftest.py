@@ -41,6 +41,10 @@ def template_repository(tmp_path: Path) -> Path:
         "_subdirectory: template\ndeck_name:\n  type: str\n  default: slidedeck\n",
         encoding="utf-8",
     )
+    (path / "CHANGELOG.md").write_text(
+        "# Changelog\n\n## 1.0.0 - 2026-08-26\n\n- Initial template.\n",
+        encoding="utf-8",
+    )
     template = path / "template"
     template.mkdir()
     (template / ".marpme" / "copier-answers.yml.jinja").parent.mkdir(parents=True)

@@ -63,6 +63,7 @@ class UpdateResult:
     previous_version: str | None
     current_version: str | None
     conflicts: tuple[Path, ...] = ()
+    changes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

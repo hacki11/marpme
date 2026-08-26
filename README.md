@@ -59,6 +59,9 @@ For later decks it should provide a literal `.marpme/starter/` directory; Marpme
 without making the new deck part of Copier's managed update surface. If no starter is present,
 Marpme creates a small standard deck.
 
+Templates must maintain a versioned, parseable `CHANGELOG.md`. After a template update, Marpme
+shows the bullet-point changes recorded for the installed version when that file is available.
+
 `.marpme/config.yml` supports:
 
 ```yaml

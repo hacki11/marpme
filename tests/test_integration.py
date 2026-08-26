@@ -139,6 +139,11 @@ def test_copier_update_applies_new_tag_and_preserves_local_changes(
     (template_repository / "template/.marpme/scripts/check.sh").write_text(
         "#!/bin/sh\n", encoding="utf-8"
     )
+    (template_repository / "CHANGELOG.md").write_text(
+        "# Changelog\n\n## 1.1.0 - 2026-08-26\n\n- Updated company theme.\n\n"
+        "## 1.0.0 - 2026-08-26\n\n- Initial template.\n",
+        encoding="utf-8",
+    )
     git(template_repository, "add", ".")
     git(template_repository, "commit", "-qm", "template v1.1")
     git(template_repository, "tag", "v1.1.0")
@@ -152,6 +157,39 @@ def test_copier_update_applies_new_tag_and_preserves_local_changes(
     ) == "/* template v2 */\n"
     assert "Local brand rule." in skill.read_text(encoding="utf-8")
     assert (in_repository / ".marpme/scripts/check.sh").is_file()
+    assert update.changes == ("Updated company theme.",)
+
+
+def test_update_displays_changelog_changes(in_repository: Path, template_repository: Path) -> None:
+    created = runner.invoke(
+        app,
+        [
+            "--no-update-check",
+            "new",
+            "demo",
+            "--template",
+            str(template_repository),
+            "--template-ref",
+            "v1.0.0",
+        ],
+    )
+    assert created.exit_code == 0, created.output
+    git(in_repository, "add", ".")
+    git(in_repository, "commit", "-qm", "create deck")
+    (template_repository / "CHANGELOG.md").write_text(
+        "# Changelog\n\n## 1.1.0 - 2026-08-26\n\n- Added diagram primitives.\n\n"
+        "## 1.0.0 - 2026-08-26\n\n- Initial template.\n",
+        encoding="utf-8",
+    )
+    git(template_repository, "add", ".")
+    git(template_repository, "commit", "-qm", "add release notes")
+    git(template_repository, "tag", "v1.1.0")
+
+    updated = runner.invoke(app, ["--no-update-check", "update", "--to", "v1.1.0"])
+
+    assert updated.exit_code == 0, updated.output
+    assert "Changes:" in updated.output
+    assert "Added diagram primitives." in updated.output
 
 
 def test_status_works_offline(in_repository: Path, template_repository: Path) -> None:

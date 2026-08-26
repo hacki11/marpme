@@ -143,6 +143,10 @@ def update_command(
         _failure(exc)
     console.print(f"Current template: {result.previous_version or 'unknown'}")
     console.print(f"Updated template: {result.current_version or 'unknown'}")
+    if result.changes:
+        console.print("\nChanges:")
+        for change in result.changes:
+            console.print(f"  - {change}")
     if result.conflicts:
         console.print("\n[yellow]! Template update completed with conflicts[/yellow]\n")
         console.print("Conflicts:")
