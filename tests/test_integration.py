@@ -32,7 +32,7 @@ def test_new_initializes_environment_and_multiple_decks(
     )
     assert first.exit_code == 0, first.output
     assert (in_repository / ".marpme/copier-answers.yml").is_file()
-    assert (in_repository / ".marpme/.marpme.yml").is_file()
+    assert (in_repository / ".marpme/config.yml").is_file()
     assert not (in_repository / ".copier-answers.yml").exists()
     assert not (in_repository / ".marpme.yml").exists()
     assert (in_repository / ".marpme/theme/company.css").is_file()
@@ -69,13 +69,13 @@ def test_legacy_metadata_is_migrated_into_marpme_directory(
     )
     assert created.exit_code == 0, created.output
     (in_repository / ".marpme/copier-answers.yml").replace(in_repository / ".copier-answers.yml")
-    (in_repository / ".marpme/.marpme.yml").replace(in_repository / ".marpme.yml")
+    (in_repository / ".marpme/config.yml").replace(in_repository / ".marpme/.marpme.yml")
 
     second = runner.invoke(app, ["--no-update-check", "new", "second"])
 
     assert second.exit_code == 0, second.output
     assert (in_repository / ".marpme/copier-answers.yml").is_file()
-    assert (in_repository / ".marpme/.marpme.yml").is_file()
+    assert (in_repository / ".marpme/config.yml").is_file()
     assert not (in_repository / ".copier-answers.yml").exists()
     assert not (in_repository / ".marpme.yml").exists()
 

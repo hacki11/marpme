@@ -59,7 +59,7 @@ For later decks it should provide a literal `.marpme/starter/` directory; Marpme
 without making the new deck part of Copier's managed update surface. If no starter is present,
 Marpme creates a small standard deck.
 
-`.marpme/.marpme.yml` supports:
+`.marpme/config.yml` supports:
 
 ```yaml
 version: 1

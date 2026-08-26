@@ -1027,7 +1027,7 @@ Repository-level config should be minimal.
 Potential file:
 
 ```text
-.marpme/.marpme.yml
+.marpme/config.yml
 ```
 
 Example:

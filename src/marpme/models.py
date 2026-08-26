@@ -26,15 +26,22 @@ class Repository:
 
     @property
     def config_file(self) -> Path:
-        return self.marpme_dir / ".marpme.yml"
+        return self.marpme_dir / "config.yml"
 
     @property
     def legacy_config_file(self) -> Path:
         return self.root / ".marpme.yml"
 
     @property
+    def legacy_nested_config_file(self) -> Path:
+        return self.marpme_dir / ".marpme.yml"
+
+    @property
     def existing_config_file(self) -> Path:
-        return self.config_file if self.config_file.is_file() else self.legacy_config_file
+        for path in (self.config_file, self.legacy_nested_config_file, self.legacy_config_file):
+            if path.is_file():
+                return path
+        return self.config_file
 
 
 @dataclass(frozen=True)
