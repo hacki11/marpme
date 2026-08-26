@@ -121,11 +121,11 @@ def new_command(
         _failure(exc)
     console.print("[green]✓[/green] Repository detected")
     console.print(f"[green]✓[/green] Template {template_version or 'version not recorded'} applied")
-    console.print(f"[green]✓[/green] Presentation created: {deck_file.parent}")
+    console.print(f"[green]✓[/green] Presentation created: {deck_file.parent.as_posix()}")
     if vscode_changed:
         console.print("[green]✓[/green] VS Code Marp extension recommended")
     console.print("\nNext:")
-    console.print(f"  edit {deck_file}")
+    console.print(f"  edit {deck_file.as_posix()}")
     _update_notice()
 
 
@@ -146,7 +146,7 @@ def update_command(
         console.print("\n[yellow]! Template update completed with conflicts[/yellow]\n")
         console.print("Conflicts:")
         for conflict in result.conflicts:
-            console.print(f"  {conflict}")
+            console.print(f"  {conflict.as_posix()}")
         console.print("\nResolve the conflict markers, then commit the result.")
         raise typer.Exit(code=1)
     console.print("\n[green]✓[/green] Copier update completed")

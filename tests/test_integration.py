@@ -75,7 +75,8 @@ def test_invalid_vscode_json_fails_before_template_mutation(
         ["--no-update-check", "new", "demo", "--template", str(template_repository)],
     )
     assert result.exit_code == 1
-    assert "not valid JSON or JSONC" in result.output
+    assert "not valid JSON" in result.output
+    assert "JSONC" in result.output
     assert not (in_repository / ".copier-answers.yml").exists()
     assert not (in_repository / "presentations/demo").exists()
 

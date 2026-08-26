@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import yaml
 
@@ -38,8 +38,19 @@ def load_config(path: Path) -> MarpmeConfig:
         raise InvalidConfigError(f"Unsupported Marpme configuration version: {version}")
     if not isinstance(presentations_dir, str) or not presentations_dir.strip():
         raise InvalidConfigError("presentations_dir must be a non-empty string.")
-    configured = Path(presentations_dir)
-    if configured.is_absolute() or ".." in configured.parts:
+    # Validate both path dialects regardless of the host OS. A POSIX-rooted path
+    # such as `/tmp/decks` is not considered absolute by WindowsPath, while a
+    # drive or UNC path is not considered absolute by PosixPath. Config files
+    # must remain safe when repositories move between Windows, WSL, and Linux.
+    posix_path = PurePosixPath(presentations_dir.replace("\\", "/"))
+    windows_path = PureWindowsPath(presentations_dir)
+    if (
+        posix_path.is_absolute()
+        or windows_path.is_absolute()
+        or bool(windows_path.drive)
+        or ".." in posix_path.parts
+        or ".." in windows_path.parts
+    ):
         raise InvalidConfigError("presentations_dir must stay within the repository.")
     if not isinstance(template, dict):
         raise InvalidConfigError("template must be a YAML object.")
@@ -48,6 +59,6 @@ def load_config(path: Path) -> MarpmeConfig:
         raise InvalidConfigError("Only the stable template channel is supported.")
     return MarpmeConfig(
         version=version,
-        presentations_dir=presentations_dir,
+        presentations_dir=posix_path.as_posix(),
         template_channel=channel,
     )
