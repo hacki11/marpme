@@ -62,14 +62,6 @@ Marpme stops with an error rather than creating deck content itself.
 Templates must maintain a versioned, parseable `CHANGELOG.md`. After a template update, Marpme
 shows the bullet-point changes recorded for the installed version when that file is available.
 
-`.marpme/config.yml` supports:
-
-```yaml
-version: 1
-template:
-  channel: stable
-```
-
 ## Development
 
 Python 3.13 or newer is required for source development:

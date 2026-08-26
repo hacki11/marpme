@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import yaml
-
 from marpme.errors import DeckExistsError
-from marpme.services.config import load_config, template_source
+from marpme.services.config import template_source
 from marpme.services.copier_service import CopierService
 from marpme.services.decks import DeckService
 from marpme.services.process import ProcessService
@@ -25,7 +23,6 @@ def create_deck(
     repository = repositories.find()
     repositories.validate_deck_name(name)
     process.require_git()
-    load_config(repository.existing_config_file)
     target = decks.target(repository, name)
     if target.exists():
         raise DeckExistsError(
@@ -45,19 +42,6 @@ def create_deck(
                 deck_name=name,
                 vcs_ref=vcs_ref,
             )
-            if not repository.config_file.exists():
-                repository.marpme_dir.mkdir(parents=True, exist_ok=True)
-                repository.config_file.write_text(
-                    yaml.safe_dump(
-                        {
-                            "version": 1,
-                            "template": {"channel": "stable"},
-                        },
-                        sort_keys=False,
-                    ),
-                    encoding="utf-8",
-                )
-            load_config(repository.existing_config_file)
         else:
             state = copier.get_state(repository)
 

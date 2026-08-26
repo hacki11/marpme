@@ -1,12 +1,6 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
-
-import yaml
-
-from marpme.errors import InvalidConfigError
-from marpme.models import MarpmeConfig
 
 DEFAULT_TEMPLATE_SOURCE = "git@github.com:hacki11/marp-template.git"
 DEFAULT_RELEASE_MANIFEST_URL = (
@@ -20,28 +14,3 @@ def template_source(command_line: str | None = None) -> str:
 
 def release_manifest_url() -> str:
     return os.environ.get("MARPME_RELEASE_MANIFEST", DEFAULT_RELEASE_MANIFEST_URL)
-
-
-def load_config(path: Path) -> MarpmeConfig:
-    if not path.exists():
-        return MarpmeConfig()
-    try:
-        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    except (OSError, yaml.YAMLError) as exc:
-        raise InvalidConfigError(f"Cannot read {path}: {exc}") from exc
-    if not isinstance(raw, dict):
-        raise InvalidConfigError(f"{path} must contain a YAML object.")
-    version = raw.get("version", 1)
-    template = raw.get("template", {}) or {}
-    if version != 1:
-        raise InvalidConfigError(f"Unsupported Marpme configuration version: {version}")
-    unknown = set(raw) - {"version", "template"}
-    if unknown:
-        shown = ", ".join(sorted(str(key) for key in unknown))
-        raise InvalidConfigError(f"Unsupported Marpme configuration key: {shown}")
-    if not isinstance(template, dict):
-        raise InvalidConfigError("template must be a YAML object.")
-    channel = template.get("channel", "stable")
-    if channel != "stable":
-        raise InvalidConfigError("Only the stable template channel is supported.")
-    return MarpmeConfig(version=version, template_channel=channel)

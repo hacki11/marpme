@@ -24,32 +24,6 @@ class Repository:
     def existing_answers_file(self) -> Path:
         return self.answers_file if self.answers_file.is_file() else self.legacy_answers_file
 
-    @property
-    def config_file(self) -> Path:
-        return self.marpme_dir / "config.yml"
-
-    @property
-    def legacy_config_file(self) -> Path:
-        return self.root / ".marpme.yml"
-
-    @property
-    def legacy_nested_config_file(self) -> Path:
-        return self.marpme_dir / ".marpme.yml"
-
-    @property
-    def existing_config_file(self) -> Path:
-        for path in (self.config_file, self.legacy_nested_config_file, self.legacy_config_file):
-            if path.is_file():
-                return path
-        return self.config_file
-
-
-@dataclass(frozen=True)
-class MarpmeConfig:
-    version: int = 1
-    template_channel: str = "stable"
-
-
 @dataclass(frozen=True)
 class TemplateState:
     source: str | None

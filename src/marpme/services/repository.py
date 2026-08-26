@@ -45,8 +45,6 @@ class RepositoryService:
         """Move pre-.marpme metadata into the current managed directory."""
         moves = (
             (repository.legacy_answers_file, repository.answers_file),
-            (repository.legacy_nested_config_file, repository.config_file),
-            (repository.legacy_config_file, repository.config_file),
         )
         pending = [(source, destination) for source, destination in moves if source.is_file()]
         if not pending:

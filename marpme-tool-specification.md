@@ -1017,26 +1017,9 @@ Preferred optional metadata:
 
 # 22. Configuration
 
-Repository-level config should be minimal.
-
-Potential file:
-
-```text
-.marpme/config.yml
-```
-
-Example:
-
-```yaml
-version: 1
-
-template:
-  channel: stable
-```
-
-Do not duplicate data already managed by Copier unless needed for Marpme-specific behavior.
-
-Keep the configuration format stable and versioned.
+Marpme does not maintain a repository-level configuration file. Copier metadata
+records the template source and selected version; rendering configuration remains
+part of the template-managed Marp assets.
 
 ---
 
