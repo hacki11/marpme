@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "marpme"
+version = "0.1.0"
+description = "Add and maintain company-standard Marp presentations in a repository"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [{ name = "Marpme maintainers" }]
+dependencies = [
+  "click>=8.1.8",
+  "copier>=9.4,<10",
+  "packaging>=24.2",
+  "platformdirs>=4.3",
+  "PyYAML>=6.0",
+  "rich>=13.9",
+  "typer>=0.15",
+]
+
+[project.scripts]
+marpme = "marpme.__main__:main"
+
+[dependency-groups]
+dev = [
+  "hatchling>=1.27",
+  "pyinstaller>=6.11",
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "ruff>=0.9",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/marpme"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]

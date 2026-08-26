@@ -1,0 +1,16 @@
+{
+  "name": "@company/marpme",
+  "version": "0.1.0",
+  "description": "Ephemeral launcher for the Marpme standalone CLI",
+  "license": "MIT",
+  "bin": {
+    "marpme": "bin/marpme.js"
+  },
+  "files": [
+    "bin/marpme.js"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}
+
