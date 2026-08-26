@@ -68,7 +68,8 @@ def test_manifest_parsing_and_checksum_replacement(
     )
     assert service.self_update() == "99.0.0"
     assert installed.read_bytes() == b"standalone executable"
-    assert installed.stat().st_mode & 0o100
+    if platform.system().lower() != "windows":
+        assert installed.stat().st_mode & 0o100
 
 
 def test_posix_replacement_is_deferred_until_process_exit(
