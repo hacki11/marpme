@@ -184,10 +184,33 @@ class ReleaseService:
             if platform.system().lower() == "windows":
                 self._schedule_windows_replacement(temporary, install_path)
             else:
-                os.replace(temporary, install_path)
+                self._schedule_posix_replacement(temporary, install_path)
         except Exception:
             temporary.unlink(missing_ok=True)
             raise
+
+    @staticmethod
+    def _schedule_posix_replacement(temporary: Path, install_path: Path) -> None:
+        # A one-file PyInstaller executable may load bundled modules lazily. Replacing
+        # it while it is still running can make those reads use the new archive with
+        # offsets from the old archive, resulting in decompression errors.
+        subprocess.Popen(
+            [
+                "/bin/sh",
+                "-c",
+                'while kill -0 "$1" 2>/dev/null; do sleep 0.1; done\n'
+                'mv -f -- "$2" "$3"',
+                "marpme-updater",
+                str(os.getpid()),
+                str(temporary),
+                str(install_path),
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            close_fds=True,
+        )
 
     @staticmethod
     def _schedule_windows_replacement(temporary: Path, install_path: Path) -> None:

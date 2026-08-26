@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -23,8 +25,6 @@ def test_platform_key_is_supported() -> None:
 def test_manifest_parsing_and_checksum_replacement(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    if platform.system().lower() == "windows":
-        pytest.skip("Windows replacement is scheduled after process exit")
     artifact = tmp_path / "artifact"
     artifact.write_bytes(b"standalone executable")
     digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
@@ -58,9 +58,43 @@ def test_manifest_parsing_and_checksum_replacement(
     )
     monkeypatch.setenv("MARPME_INSTALL_METADATA", str(metadata))
     service = ReleaseService(manifest.as_uri())
+    scheduler = (
+        "_schedule_windows_replacement"
+        if platform.system().lower() == "windows"
+        else "_schedule_posix_replacement"
+    )
+    monkeypatch.setattr(
+        service, scheduler, lambda source, destination: os.replace(source, destination)
+    )
     assert service.self_update() == "99.0.0"
     assert installed.read_bytes() == b"standalone executable"
     assert installed.stat().st_mode & 0o100
+
+
+def test_posix_replacement_is_deferred_until_process_exit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    temporary = tmp_path / ".marpme-update"
+    installed = tmp_path / "marpme"
+    popen_call: dict[str, object] = {}
+
+    def record_popen(args: list[str], **kwargs: object) -> None:
+        popen_call["args"] = args
+        popen_call["kwargs"] = kwargs
+
+    monkeypatch.setattr(subprocess, "Popen", record_popen)
+
+    ReleaseService._schedule_posix_replacement(temporary, installed)
+
+    args = popen_call["args"]
+    assert isinstance(args, list)
+    assert args[:2] == ["/bin/sh", "-c"]
+    assert "kill -0" in args[2]
+    assert args[4:] == [str(os.getpid()), str(temporary), str(installed)]
+    kwargs = popen_call["kwargs"]
+    assert isinstance(kwargs, dict)
+    assert kwargs["start_new_session"] is True
+    assert kwargs["close_fds"] is True
 
 
 def test_bad_checksum_does_not_replace_installation(

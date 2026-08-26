@@ -217,6 +217,5 @@ def self_update_command() -> None:
     if version == __version__:
         console.print(f"Marpme {version} is already current.")
     else:
-        console.print(f"[green]✓[/green] Marpme {version} installed.")
-        if __import__("platform").system().lower() == "windows":
-            console.print("The executable will be replaced after this process exits.")
+        console.print(f"[green]✓[/green] Marpme {version} downloaded.")
+        console.print("The executable will be replaced after this process exits.")
