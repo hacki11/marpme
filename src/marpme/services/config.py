@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path
 
 import yaml
 
@@ -32,33 +32,16 @@ def load_config(path: Path) -> MarpmeConfig:
     if not isinstance(raw, dict):
         raise InvalidConfigError(f"{path} must contain a YAML object.")
     version = raw.get("version", 1)
-    presentations_dir = raw.get("presentations_dir", "presentations")
     template = raw.get("template", {}) or {}
     if version != 1:
         raise InvalidConfigError(f"Unsupported Marpme configuration version: {version}")
-    if not isinstance(presentations_dir, str) or not presentations_dir.strip():
-        raise InvalidConfigError("presentations_dir must be a non-empty string.")
-    # Validate both path dialects regardless of the host OS. A POSIX-rooted path
-    # such as `/tmp/decks` is not considered absolute by WindowsPath, while a
-    # drive or UNC path is not considered absolute by PosixPath. Config files
-    # must remain safe when repositories move between Windows, WSL, and Linux.
-    posix_path = PurePosixPath(presentations_dir.replace("\\", "/"))
-    windows_path = PureWindowsPath(presentations_dir)
-    if (
-        posix_path.is_absolute()
-        or windows_path.is_absolute()
-        or bool(windows_path.drive)
-        or ".." in posix_path.parts
-        or ".." in windows_path.parts
-    ):
-        raise InvalidConfigError("presentations_dir must stay within the repository.")
+    unknown = set(raw) - {"version", "template"}
+    if unknown:
+        shown = ", ".join(sorted(str(key) for key in unknown))
+        raise InvalidConfigError(f"Unsupported Marpme configuration key: {shown}")
     if not isinstance(template, dict):
         raise InvalidConfigError("template must be a YAML object.")
     channel = template.get("channel", "stable")
     if channel != "stable":
         raise InvalidConfigError("Only the stable template channel is supported.")
-    return MarpmeConfig(
-        version=version,
-        presentations_dir=posix_path.as_posix(),
-        template_channel=channel,
-    )
+    return MarpmeConfig(version=version, template_channel=channel)

@@ -175,7 +175,7 @@ marpme
 which creates:
 
 ```text
-presentations/slidedeck/
+slidedeck/
 ```
 
 For an explicitly named deck, the user runs:
@@ -190,13 +190,13 @@ Expected result:
 ✓ Repository detected
 ✓ Marpme environment initialized
 ✓ Template 1.4.0 applied
-✓ Presentation created: presentations/architecture-review
+✓ Presentation created: architecture-review
 ✓ Company Marp theme added
 ✓ AI presentation skill added
 ✓ VS Code Marp extension recommended
 
 Next:
-  edit presentations/architecture-review/deck.md
+  edit architecture-review/deck.md
 ```
 
 Resulting repository:
@@ -205,11 +205,10 @@ Resulting repository:
 my-product/
 ├── src/
 ├── tests/
-├── presentations/
-│   └── architecture-review/
-│       ├── deck.md
-│       ├── assets/
-│       └── ...
+├── architecture-review/
+│   ├── deck.md
+│   ├── assets/
+│   └── ...
 ├── .marpme/
 │   ├── ...
 │   └── ...
@@ -382,16 +381,15 @@ repo/
 │   ├── metadata/
 │   └── ...
 │
-├── presentations/
-│   ├── architecture-review/
-│   │   ├── deck.md
-│   │   ├── assets/
-│   │   └── custom.css
-│   │
-│   └── customer-demo/
-│       ├── deck.md
-│       ├── assets/
-│       └── custom.css
+├── architecture-review/
+│   ├── deck.md
+│   ├── assets/
+│   └── custom.css
+│
+├── customer-demo/
+│   ├── deck.md
+│   ├── assets/
+│   └── custom.css
 │
 ├── .vscode/
 │   └── extensions.json
@@ -433,9 +431,9 @@ Users may modify them, but modifications become part of Copier's merge/update be
 Examples:
 
 ```text
-presentations/**/deck.md
-presentations/**/assets/**
-presentations/**/custom.css
+<deck-name>/deck.md
+<deck-name>/assets/**
+<deck-name>/custom.css
 ```
 
 These contain presentation-specific user work.
@@ -600,7 +598,7 @@ Creates a new deck inside the current repository.
 Default target:
 
 ```text
-presentations/<name>/
+<name>/
 ```
 
 Example:
@@ -1035,8 +1033,6 @@ Example:
 ```yaml
 version: 1
 
-presentations_dir: presentations
-
 template:
   channel: stable
 ```
@@ -1072,7 +1068,7 @@ Creating presentation "architecture-review"
 ✓ VS Code integration
 
 Created:
-  presentations/architecture-review/deck.md
+  architecture-review/deck.md
 ```
 
 Support:
@@ -2378,7 +2374,7 @@ No custom silent overwrite is allowed.
 Given:
 
 ```text
-presentations/foo/
+foo/
 ```
 
 then:
@@ -2420,7 +2416,7 @@ marpme new slidedeck
 and create:
 
 ```text
-presentations/slidedeck/
+slidedeck/
 ```
 
 If that deck already exists, the command must fail safely and must not overwrite it.

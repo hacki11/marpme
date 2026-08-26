@@ -47,7 +47,6 @@ class Repository:
 @dataclass(frozen=True)
 class MarpmeConfig:
     version: int = 1
-    presentations_dir: str = "presentations"
     template_channel: str = "stable"
 
 

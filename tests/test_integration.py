@@ -37,7 +37,7 @@ def test_new_initializes_environment_and_multiple_decks(
     assert not (in_repository / ".marpme.yml").exists()
     assert (in_repository / ".marpme/theme/company.css").is_file()
     assert (in_repository / ".marpme/skills/slides/SKILL.md").is_file()
-    assert (in_repository / "presentations/architecture-review/deck.md").is_file()
+    assert (in_repository / "architecture-review/deck.md").is_file()
     assert "marp-team.marp-vscode" in (in_repository / ".vscode/extensions.json").read_text(
         encoding="utf-8"
     )
@@ -47,7 +47,7 @@ def test_new_initializes_environment_and_multiple_decks(
 
     second = runner.invoke(app, ["--no-update-check", "new", "customer-demo"])
     assert second.exit_code == 0, second.output
-    assert (in_repository / "presentations/customer-demo/deck.md").is_file()
+    assert (in_repository / "customer-demo/deck.md").is_file()
     state = CopierService().get_state(RepositoryService().find(in_repository))
     assert state.answers["deck_name"] == "architecture-review"
 
@@ -81,7 +81,7 @@ def test_legacy_metadata_is_migrated_into_marpme_directory(
 
 
 def test_existing_deck_is_never_overwritten(in_repository: Path, template_repository: Path) -> None:
-    target = in_repository / "presentations/existing"
+    target = in_repository / "existing"
     target.mkdir(parents=True)
     original = target / "deck.md"
     original.write_text("valuable content\n", encoding="utf-8")
@@ -109,7 +109,7 @@ def test_invalid_vscode_json_fails_before_template_mutation(
     assert "not valid JSON" in result.output
     assert "JSONC" in result.output
     assert not (in_repository / ".marpme/copier-answers.yml").exists()
-    assert not (in_repository / "presentations/demo").exists()
+    assert not (in_repository / "demo").exists()
 
 
 def test_copier_update_applies_new_tag_and_preserves_local_changes(
@@ -206,6 +206,7 @@ def test_status_works_offline(in_repository: Path, template_repository: Path) ->
         ],
     )
     assert created.exit_code == 0, created.output
+    (in_repository / "src").mkdir()
     status = get_status(check_remote=False)
     assert status.template_version == "1.0.0"
     assert status.latest_version is None
@@ -254,13 +255,13 @@ def test_shorthand_and_bare_command(
     monkeypatch.setenv("MARPME_TEMPLATE_SOURCE", str(template_repository))
     shorthand = runner.invoke(app, ["--no-update-check", "quick-demo"])
     assert shorthand.exit_code == 0, shorthand.output
-    assert (in_repository / "presentations/quick-demo/deck.md").is_file()
+    assert (in_repository / "quick-demo/deck.md").is_file()
 
     # The group injects the default only when no process-level arguments are present.
     # Invoke a fresh app without global flags to exercise the exact `marpme` behavior.
     bare = runner.invoke(app, [])
     assert bare.exit_code == 0, bare.output
-    assert (in_repository / "presentations/slidedeck/deck.md").is_file()
+    assert (in_repository / "slidedeck/deck.md").is_file()
 
 
 def test_version_option() -> None:

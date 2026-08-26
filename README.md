@@ -6,7 +6,7 @@ Add a company-standard Marp presentation environment to an existing Git reposito
 marpme new architecture-review
 ```
 
-Running `marpme` with no arguments creates `presentations/slidedeck`. The shorthand
+Running `marpme` with no arguments creates `slidedeck`. The shorthand
 `marpme architecture-review` is equivalent to the command above.
 
 ## Install
@@ -54,7 +54,7 @@ the responsibility of Marp/Marpit tooling.
 
 The source must be a versioned Git repository containing a valid `copier.yml`. Copier renders it
 into the repository root and records state in `.marpme/copier-answers.yml`. Shared, upgradeable files
-belong under `.marpme/`. A template may create the first `presentations/<deck_name>/deck.md` itself.
+belong under `.marpme/`. A template may create the first `<deck_name>/deck.md` itself.
 For later decks it should provide a literal `.marpme/starter/` directory; Marpme copies that folder
 without making the new deck part of Copier's managed update surface. If no starter is present,
 Marpme creates a small standard deck.
@@ -66,7 +66,6 @@ shows the bullet-point changes recorded for the installed version when that file
 
 ```yaml
 version: 1
-presentations_dir: presentations
 template:
   channel: stable
 ```

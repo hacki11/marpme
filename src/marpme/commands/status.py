@@ -20,7 +20,7 @@ class Status:
 
 def get_status(*, check_remote: bool = True) -> Status:
     repository = RepositoryService().find()
-    config = load_config(repository.existing_config_file)
+    load_config(repository.existing_config_file)
     state = CopierService().get_state(repository)
     latest = TemplateService().latest_version(state) if check_remote else None
-    return Status(__version__, state.version, latest, DeckService().list(repository, config))
+    return Status(__version__, state.version, latest, DeckService().list(repository))

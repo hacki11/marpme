@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 from marpme.errors import DeckExistsError
-from marpme.models import MarpmeConfig, Repository
+from marpme.models import Repository
 
 DEFAULT_DECK = """---
 marp: true
@@ -23,11 +23,11 @@ Start writing your presentation here.
 
 
 class DeckService:
-    def target(self, repository: Repository, config: MarpmeConfig, name: str) -> Path:
-        return repository.root / config.presentations_dir / name
+    def target(self, repository: Repository, name: str) -> Path:
+        return repository.root / name
 
-    def create(self, repository: Repository, config: MarpmeConfig, name: str) -> Path:
-        target = self.target(repository, config, name)
+    def create(self, repository: Repository, name: str) -> Path:
+        target = self.target(repository, name)
         if target.exists():
             raise DeckExistsError(
                 f'A deck named "{name}" already exists at '
@@ -54,8 +54,11 @@ class DeckService:
             raise
         return target / "deck.md"
 
-    def list(self, repository: Repository, config: MarpmeConfig) -> tuple[str, ...]:
-        directory = repository.root / config.presentations_dir
-        if not directory.is_dir():
-            return ()
-        return tuple(sorted(item.name for item in directory.iterdir() if item.is_dir()))
+    def list(self, repository: Repository) -> tuple[str, ...]:
+        return tuple(
+            sorted(
+                item.name
+                for item in repository.root.iterdir()
+                if item.is_dir() and (item / "deck.md").is_file()
+            )
+        )
