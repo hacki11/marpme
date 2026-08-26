@@ -37,10 +37,7 @@ def template_repository(tmp_path: Path) -> Path:
     path = tmp_path / "template"
     path.mkdir()
     git(path, "init", "-q")
-    (path / "copier.yml").write_text(
-        "_subdirectory: template\ndeck_name:\n  type: str\n  default: slidedeck\n",
-        encoding="utf-8",
-    )
+    (path / "copier.yml").write_text("_subdirectory: template\n", encoding="utf-8")
     (path / "CHANGELOG.md").write_text(
         "# Changelog\n\n## 1.0.0 - 2026-08-26\n\n- Initial template.\n",
         encoding="utf-8",

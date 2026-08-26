@@ -54,7 +54,7 @@ the responsibility of Marp/Marpit tooling.
 
 The source must be a versioned Git repository containing a valid `copier.yml`. Copier renders it
 into the repository root and records state in `.marpme/copier-answers.yml`. Shared, upgradeable files
-belong under `.marpme/`. A template may create the first `<deck_name>/deck.md` itself.
+belong under `.marpme/`. A template may create the first `<name>/deck.md` itself.
 For later decks it should provide a literal `.marpme/starter/` directory; Marpme copies that folder
 without making the new deck part of Copier's managed update surface. If no starter is present,
 Marpme stops with an error rather than creating deck content itself.

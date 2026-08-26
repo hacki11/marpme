@@ -50,7 +50,7 @@ def test_new_initializes_environment_and_multiple_decks(
     assert second.exit_code == 0, second.output
     assert (in_repository / "customer-demo/deck.md").is_file()
     state = CopierService().get_state(RepositoryService().find(in_repository))
-    assert state.answers["deck_name"] == "architecture-review"
+    assert "deck_name" not in state.answers
 
 
 def test_legacy_copier_metadata_is_migrated_into_marpme_directory(
@@ -69,13 +69,17 @@ def test_legacy_copier_metadata_is_migrated_into_marpme_directory(
         ],
     )
     assert created.exit_code == 0, created.output
-    (in_repository / ".marpme/copier-answers.yml").replace(in_repository / ".copier-answers.yml")
+    answers = in_repository / ".marpme/copier-answers.yml"
+    answers.write_text(answers.read_text(encoding="utf-8") + "deck_name: first\n", encoding="utf-8")
+    answers.replace(in_repository / ".copier-answers.yml")
 
     second = runner.invoke(app, ["--no-update-check", "new", "second"])
 
     assert second.exit_code == 0, second.output
     assert (in_repository / ".marpme/copier-answers.yml").is_file()
     assert not (in_repository / ".copier-answers.yml").exists()
+    state = CopierService().get_state(RepositoryService().find(in_repository))
+    assert "deck_name" not in state.answers
 
 
 def test_existing_deck_is_never_overwritten(in_repository: Path, template_repository: Path) -> None:

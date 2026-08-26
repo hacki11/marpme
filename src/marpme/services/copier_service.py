@@ -26,7 +26,6 @@ class CopierService:
         repository: Repository,
         source: str,
         *,
-        deck_name: str,
         vcs_ref: str | None = None,
     ) -> TemplateState:
         try:
@@ -35,7 +34,6 @@ class CopierService:
             run_copy(
                 source,
                 repository.root,
-                data={"deck_name": deck_name},
                 vcs_ref=vcs_ref,
                 defaults=True,
                 quiet=True,
@@ -73,8 +71,21 @@ class CopierService:
             )
         except Exception as exc:
             self._raise_copier_error(exc, before.source or "configured template")
+        self.remove_obsolete_answers(repository)
         after = self.get_state(repository)
         return UpdateResult(before.version, after.version)
+
+    def remove_obsolete_answers(self, repository: Repository) -> None:
+        """Remove answers from older templates that no longer define a question."""
+        path = repository.existing_answers_file
+        try:
+            raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError):
+            return
+        if not isinstance(raw, dict) or "deck_name" not in raw:
+            return
+        raw.pop("deck_name")
+        path.write_text(yaml.safe_dump(raw, sort_keys=False), encoding="utf-8")
 
     def get_state(self, repository: Repository) -> TemplateState:
         path = repository.existing_answers_file

@@ -35,11 +35,12 @@ def create_deck(
     with repositories.mutation_lock(repository):
         repositories.migrate_legacy_metadata(repository)
         initialized = repository.answers_file.is_file()
+        if initialized:
+            copier.remove_obsolete_answers(repository)
         if not initialized:
             state = copier.create_repository_environment(
                 repository,
                 template_source(source),
-                deck_name=name,
                 vcs_ref=vcs_ref,
             )
         else:
