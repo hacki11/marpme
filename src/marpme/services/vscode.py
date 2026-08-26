@@ -9,6 +9,7 @@ from pathlib import Path
 from marpme.errors import InvalidConfigError
 
 MARP_EXTENSION = "marp-team.marp-vscode"
+MARP_THEMES = ("./.marpme/theme/company.css", "./.marpme/theme/company-dark.css")
 
 
 def _jsonc_for_parsing(text: str) -> str:
@@ -154,9 +155,61 @@ class VsCodeService:
             raise InvalidConfigError(f'"recommendations" in {path} must be an array of strings.')
         if recommendations and MARP_EXTENSION in recommendations:
             return False
-        updated = self._insert_recommendation(original, sanitized, recommendations)
+        updated = self._insert_array_value(
+            original,
+            sanitized,
+            key="recommendations",
+            existing=recommendations,
+            value=MARP_EXTENSION,
+        )
         self._atomic_write(path, updated)
         return True
+
+    def validate_settings(self, repository_root: Path) -> None:
+        path = repository_root / ".vscode" / "settings.json"
+        if not path.exists():
+            return
+        parsed = self._read_jsonc_object(path)
+        themes = parsed.get("markdown.marp.themes")
+        if themes is not None and (
+            not isinstance(themes, list) or any(not isinstance(item, str) for item in themes)
+        ):
+            raise InvalidConfigError(
+                f'"markdown.marp.themes" in {path} must be an array of strings.'
+            )
+
+    def ensure_theme_settings(self, repository_root: Path) -> bool:
+        path = repository_root / ".vscode" / "settings.json"
+        if not path.exists():
+            self._atomic_write(
+                path,
+                json.dumps({"markdown.marp.themes": list(MARP_THEMES)}, indent=2) + "\n",
+            )
+            return True
+        changed = False
+        for theme in MARP_THEMES:
+            original = path.read_text(encoding="utf-8")
+            sanitized = _jsonc_for_parsing(original)
+            parsed = self._read_jsonc_object(path)
+            themes = parsed.get("markdown.marp.themes")
+            if themes is not None and (
+                not isinstance(themes, list) or any(not isinstance(item, str) for item in themes)
+            ):
+                raise InvalidConfigError(
+                    f'"markdown.marp.themes" in {path} must be an array of strings.'
+                )
+            if themes and theme in themes:
+                continue
+            updated = self._insert_array_value(
+                original,
+                sanitized,
+                key="markdown.marp.themes",
+                existing=themes,
+                value=theme,
+            )
+            self._atomic_write(path, updated)
+            changed = True
+        return changed
 
     def is_integrated(self, repository_root: Path) -> bool:
         path = repository_root / ".vscode" / "extensions.json"
@@ -168,40 +221,68 @@ class VsCodeService:
             return False
         return isinstance(parsed, dict) and MARP_EXTENSION in parsed.get("recommendations", [])
 
+    def themes_are_integrated(self, repository_root: Path) -> bool:
+        path = repository_root / ".vscode" / "settings.json"
+        if not path.is_file():
+            return False
+        try:
+            parsed = self._read_jsonc_object(path)
+        except InvalidConfigError:
+            return False
+        themes = parsed.get("markdown.marp.themes", [])
+        return isinstance(themes, list) and all(theme in themes for theme in MARP_THEMES)
+
     @staticmethod
-    def _insert_recommendation(
-        original: str, sanitized: str, recommendations: list[str] | None
+    def _insert_array_value(
+        original: str,
+        sanitized: str,
+        *,
+        key: str,
+        existing: list[str] | None,
+        value: str,
     ) -> str:
         newline = "\r\n" if "\r\n" in original else "\n"
-        if recommendations is None:
+        if existing is None:
             opening = sanitized.find("{")
             if opening < 0:
-                raise InvalidConfigError("Invalid .vscode/extensions.json object.")
+                raise InvalidConfigError("Invalid VS Code JSON object.")
             closing = _matching_bracket(sanitized, opening)
             indent = "  "
             comma = "," if sanitized[opening + 1 : closing].strip() else ""
             addition = (
-                f'{newline}{indent}"recommendations": ['
-                f'{newline}{indent}{indent}"{MARP_EXTENSION}"{newline}{indent}]{comma}'
+                f"{newline}{indent}{json.dumps(key)}: ["
+                f"{newline}{indent}{indent}{json.dumps(value)}{newline}{indent}]{comma}"
             )
             return original[: opening + 1] + addition + original[opening + 1 :]
 
-        key_match = re.search(r'"recommendations"\s*:', sanitized)
+        key_match = re.search(rf"{re.escape(json.dumps(key))}\s*:", sanitized)
         if key_match is None:
-            raise InvalidConfigError("Cannot locate recommendations in .vscode/extensions.json.")
+            raise InvalidConfigError(f"Cannot locate {key} in VS Code configuration.")
         opening = sanitized.find("[", key_match.end())
         closing = _matching_bracket(sanitized, opening)
         line_start = original.rfind("\n", 0, key_match.start()) + 1
         base_indent = re.match(r"\s*", original[line_start : key_match.start()]).group(0)  # type: ignore[union-attr]
         item_indent = base_indent + "  "
         spans = _string_spans(sanitized, opening + 1, closing)
-        value = f'"{MARP_EXTENSION}"'
+        rendered_value = json.dumps(value)
         if spans:
             insert_at = spans[-1][1]
-            addition = f",{newline}{item_indent}{value}"
+            addition = f",{newline}{item_indent}{rendered_value}"
             return original[:insert_at] + addition + original[insert_at:]
-        addition = f"{newline}{item_indent}{value}{newline}{base_indent}"
+        addition = f"{newline}{item_indent}{rendered_value}{newline}{base_indent}"
         return original[: opening + 1] + addition + original[closing:]
+
+    @staticmethod
+    def _read_jsonc_object(path: Path) -> dict[str, object]:
+        try:
+            parsed = json.loads(_jsonc_for_parsing(path.read_text(encoding="utf-8")))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise InvalidConfigError(
+                f"Cannot merge {path}: it is not valid JSON or JSONC.\nDetails: {exc}"
+            ) from exc
+        if not isinstance(parsed, dict):
+            raise InvalidConfigError(f"{path} must contain a JSON object.")
+        return parsed
 
     @staticmethod
     def _atomic_write(path: Path, content: str) -> None:

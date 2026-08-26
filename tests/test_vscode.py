@@ -6,7 +6,12 @@ from pathlib import Path
 import pytest
 
 from marpme.errors import InvalidConfigError
-from marpme.services.vscode import MARP_EXTENSION, VsCodeService, _jsonc_for_parsing
+from marpme.services.vscode import (
+    MARP_EXTENSION,
+    MARP_THEMES,
+    VsCodeService,
+    _jsonc_for_parsing,
+)
 
 
 def test_creates_extensions_file(tmp_path: Path) -> None:
@@ -59,3 +64,30 @@ def test_invalid_extensions_file_is_not_replaced(tmp_path: Path) -> None:
     with pytest.raises(InvalidConfigError):
         VsCodeService().ensure_recommendation(tmp_path)
     assert path.read_text(encoding="utf-8") == "not json"
+
+
+def test_theme_settings_merge_preserves_jsonc_and_unrelated_values(tmp_path: Path) -> None:
+    path = tmp_path / ".vscode/settings.json"
+    path.parent.mkdir()
+    path.write_text(
+        '{\n  // User setting\n  "editor.wordWrap": "on",\n'
+        '  "markdown.marp.themes": ["./existing.css"],\n}\n',
+        encoding="utf-8",
+    )
+    service = VsCodeService()
+    assert service.ensure_theme_settings(tmp_path)
+    rendered = path.read_text(encoding="utf-8")
+    parsed = json.loads(_jsonc_for_parsing(rendered))
+    assert parsed["editor.wordWrap"] == "on"
+    assert parsed["markdown.marp.themes"] == ["./existing.css", *MARP_THEMES]
+    assert "User setting" in rendered
+    assert service.themes_are_integrated(tmp_path)
+    assert not service.ensure_theme_settings(tmp_path)
+
+
+def test_theme_settings_reject_conflicting_type(tmp_path: Path) -> None:
+    path = tmp_path / ".vscode/settings.json"
+    path.parent.mkdir()
+    path.write_text('{"markdown.marp.themes": "wrong"}\n', encoding="utf-8")
+    with pytest.raises(InvalidConfigError, match="array of strings"):
+        VsCodeService().validate_settings(tmp_path)

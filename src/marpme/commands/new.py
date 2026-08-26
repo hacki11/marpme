@@ -34,6 +34,7 @@ def create_deck(
         )
 
     vscode.validate(repository.root)
+    vscode.validate_settings(repository.root)
     initialized = repository.answers_file.is_file()
     with repositories.mutation_lock(repository):
         if not initialized:
@@ -67,4 +68,5 @@ def create_deck(
         else:
             deck_file = decks.create(repository, config, name)
         vscode_changed = vscode.ensure_recommendation(repository.root)
+        vscode.ensure_theme_settings(repository.root)
     return deck_file.relative_to(repository.root), state.version, vscode_changed

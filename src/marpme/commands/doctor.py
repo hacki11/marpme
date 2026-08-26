@@ -36,6 +36,14 @@ def run_doctor(*, check_remote: bool = True) -> tuple[DoctorCheck, ...]:
             "" if vscode_ok else "Run marpme new <name> to repair it.",
         )
     )
+    themes_ok = VsCodeService().themes_are_integrated(repository.root)
+    checks.append(
+        DoctorCheck(
+            "VS Code themes",
+            themes_ok,
+            "" if themes_ok else "Run marpme new <name> to repair them.",
+        )
+    )
     if check_remote and state is not None:
         latest = TemplateService(process).latest_version(state)
         checks.append(

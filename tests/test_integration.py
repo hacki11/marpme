@@ -38,6 +38,9 @@ def test_new_initializes_environment_and_multiple_decks(
     assert "marp-team.marp-vscode" in (in_repository / ".vscode/extensions.json").read_text(
         encoding="utf-8"
     )
+    settings = (in_repository / ".vscode/settings.json").read_text(encoding="utf-8")
+    assert "./.marpme/theme/company.css" in settings
+    assert "./.marpme/theme/company-dark.css" in settings
 
     second = runner.invoke(app, ["--no-update-check", "new", "customer-demo"])
     assert second.exit_code == 0, second.output
