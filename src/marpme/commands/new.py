@@ -62,7 +62,7 @@ def create_deck(
             state = copier.get_state(repository)
 
         # Templates may create the first deck themselves. Subsequent decks use the
-        # versioned .marpme/starter directory, with a safe built-in starter as fallback.
+        # The versioned template starter is the only source for new deck content.
         target = decks.target(repository, name)
         deck_file = target / "deck.md" if target.exists() else decks.create(repository, name)
         vscode_changed = vscode.ensure_recommendation(repository.root)

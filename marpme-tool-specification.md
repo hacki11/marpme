@@ -383,13 +383,11 @@ repo/
 │
 ├── architecture-review/
 │   ├── deck.md
-│   ├── assets/
-│   └── custom.css
+│   └── assets/
 │
 ├── customer-demo/
 │   ├── deck.md
-│   ├── assets/
-│   └── custom.css
+│   └── assets/
 │
 ├── .vscode/
 │   └── extensions.json
@@ -433,7 +431,6 @@ Examples:
 ```text
 <deck-name>/deck.md
 <deck-name>/assets/**
-<deck-name>/custom.css
 ```
 
 These contain presentation-specific user work.
@@ -612,7 +609,7 @@ Behavior:
 - locate repository root,
 - initialize repository-level Marpme environment if absent,
 - create deck folder,
-- copy/create starter deck,
+- copy the template-provided starter deck,
 - ensure editor integration,
 - report completion.
 

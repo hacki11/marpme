@@ -3,23 +3,8 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from marpme.errors import DeckExistsError
+from marpme.errors import CopierFailureError, DeckExistsError
 from marpme.models import Repository
-
-DEFAULT_DECK = """---
-marp: true
-theme: company
-paginate: true
----
-
-# {title}
-
----
-
-## Next slide
-
-Start writing your presentation here.
-"""
 
 
 class DeckService:
@@ -33,21 +18,14 @@ class DeckService:
                 f'A deck named "{name}" already exists at '
                 f"{target.relative_to(repository.root)}.\n\nNo files were overwritten."
             )
-        target.parent.mkdir(parents=True, exist_ok=True)
         starter = repository.marpme_dir / "starter"
+        if not starter.is_dir() or not (starter / "deck.md").is_file():
+            raise CopierFailureError(
+                "The Marpme template did not provide .marpme/starter/deck.md.\n\n"
+                "Use a complete Marpme template release, then retry."
+            )
         try:
-            if starter.is_dir():
-                shutil.copytree(starter, target)
-            else:
-                target.mkdir()
-                (target / "assets").mkdir()
-                (target / "deck.md").write_text(
-                    DEFAULT_DECK.format(title=name.replace("-", " ").replace("_", " ").title()),
-                    encoding="utf-8",
-                )
-                (target / "custom.css").write_text(
-                    "/* Presentation-specific styles. */\n", encoding="utf-8"
-                )
+            shutil.copytree(starter, target)
         except Exception:
             if target.exists():
                 shutil.rmtree(target)

@@ -66,9 +66,6 @@ def template_repository(tmp_path: Path) -> Path:
         "---\nmarp: true\ntheme: company\n---\n\n# New presentation\n",
         encoding="utf-8",
     )
-    (template / ".marpme" / "starter" / "custom.css").write_text(
-        "/* deck styles */\n", encoding="utf-8"
-    )
     git(path, "add", ".")
     git(path, "commit", "-qm", "template v1")
     git(path, "tag", "v1.0.0")

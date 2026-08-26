@@ -9,7 +9,10 @@ from typer.testing import CliRunner
 from marpme.cli import app
 from marpme.commands.status import get_status
 from marpme.commands.update import update_environment
+from marpme.errors import CopierFailureError
+from marpme.models import Repository
 from marpme.services.copier_service import CopierService
+from marpme.services.decks import DeckService
 from marpme.services.repository import RepositoryService
 
 runner = CliRunner()
@@ -93,6 +96,15 @@ def test_existing_deck_is_never_overwritten(in_repository: Path, template_reposi
     assert "No files were overwritten" in result.output
     assert original.read_text(encoding="utf-8") == "valuable content\n"
     assert not (in_repository / ".marpme/copier-answers.yml").exists()
+
+
+def test_deck_creation_requires_template_starter(in_repository: Path) -> None:
+    (in_repository / ".marpme").mkdir()
+
+    with pytest.raises(CopierFailureError, match=r"starter/deck\.md"):
+        DeckService().create(Repository(in_repository), "demo")
+
+    assert not (in_repository / "demo").exists()
 
 
 def test_invalid_vscode_json_fails_before_template_mutation(
