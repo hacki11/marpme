@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import traceback
 from typing import Annotated
 
@@ -217,5 +218,8 @@ def self_update_command() -> None:
     if version == __version__:
         console.print(f"Marpme {version} is already current.")
     else:
-        console.print(f"[green]✓[/green] Marpme {version} downloaded.")
-        console.print("The executable will be replaced after this process exits.")
+        # Do not render with Rich after scheduling replacement: one-file PyInstaller
+        # builds may lazily import from their archive, which is about to be replaced.
+        sys.stdout.write(f"Marpme {version} downloaded.\n")
+        sys.stdout.write("The executable will be replaced after this process exits.\n")
+        sys.stdout.flush()
