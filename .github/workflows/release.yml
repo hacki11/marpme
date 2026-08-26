@@ -23,9 +23,21 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.13"
+      - name: Set package version from release tag
+        shell: bash
+        run: uv version --frozen "${GITHUB_REF_NAME#v}"
       - run: uv sync --all-groups
       - run: uv run pytest
       - run: uv run pyinstaller packaging/pyinstaller/marpme.spec
+      - name: Verify executable version
+        shell: bash
+        run: |
+          expected="marpme ${GITHUB_REF_NAME#v}"
+          actual="$("${{ matrix.built }}" --version)"
+          if [[ "$actual" != "$expected" ]]; then
+            printf 'Version mismatch: expected %s, got %s\n' "$expected" "$actual" >&2
+            exit 1
+          fi
       - shell: bash
         run: mv "${{ matrix.built }}" "${{ matrix.artifact }}"
       - uses: actions/upload-artifact@v4
