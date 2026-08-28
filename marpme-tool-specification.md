@@ -191,9 +191,7 @@ Expected result:
 ✓ Marpme environment initialized
 ✓ Template 1.4.0 applied
 ✓ Presentation created: architecture-review
-✓ Company Marp theme added
-✓ AI presentation skill added
-✓ VS Code Marp extension recommended
+✓ VS Code configuration merged
 
 Next:
   edit architecture-review/deck.md
@@ -343,12 +341,21 @@ Example:
 ```text
 marpme-template/
 ├── copier.yml
-├── template/
-│   ├── ...
-│   └── ...
+├── .marpme/
+│   ├── themes/
+│   └── starter/
+├── .vscode/
+│   ├── extensions.json
+│   ├── settings.json
+│   └── tasks.json
+├── example.md
 ├── CHANGELOG.md
 └── README.md
 ```
+
+The template repository must remain directly usable for theme development. Its
+`.marpme/themes/` paths are therefore identical to the installed repository paths.
+Root `.vscode/` files are excluded from Copier and merged by Marpme.
 
 Template versions must be released using Git tags, preferably semantic versions:
 
@@ -374,12 +381,9 @@ repo/
 ├── .git/
 │
 ├── .marpme/
-│   ├── config/
-│   ├── theme/
-│   ├── skills/
-│   ├── scripts/
-│   ├── metadata/
-│   └── ...
+│   ├── themes/
+│   ├── starter/
+│   └── copier-answers.yml
 │
 ├── architecture-review/
 │   ├── deck.md
@@ -414,10 +418,8 @@ Files must conceptually fall into two categories.
 Examples:
 
 ```text
-.marpme/theme/**
-.marpme/skills/**
-.marpme/scripts/**
-.marpme/config/**
+.marpme/themes/**
+.marpme/starter/**
 ```
 
 These originate from the template and are updated using Copier.
@@ -544,8 +546,7 @@ If conflicts occur:
 ! Template update completed with conflicts
 
 Conflicts:
-  .marpme/theme/company.css
-  .marpme/skills/slides/SKILL.md
+  .marpme/themes/company.css
 
 Resolve the conflict markers, commit the result, then continue normally.
 ```
@@ -825,7 +826,7 @@ Prevent path traversal.
 
 The tool should integrate with VS Code without taking ownership of the user's workspace.
 
-## 17.1 Extension recommendations
+## 17.1 Template-supplied configuration
 
 Use:
 
@@ -833,7 +834,12 @@ Use:
 .vscode/extensions.json
 ```
 
-Recommend the official Marp VS Code extension.
+The selected template revision may provide `extensions.json`, `settings.json`, and
+`tasks.json` in its root `.vscode/` directory. Marpme must use these files as the
+source of editor integration and must not hardcode template-specific extension IDs,
+settings, theme paths, or tasks.
+
+For example, the template can recommend the official Marp VS Code extension:
 
 Example:
 
@@ -845,12 +851,21 @@ Example:
 }
 ```
 
-If the file already exists:
+For every supplied JSON or JSONC file:
 
-- parse existing JSON,
-- preserve existing recommendations,
-- add missing recommendation,
+- parse and validate the existing target file,
+- preserve existing properties and scalar values,
+- add missing properties and array entries,
 - avoid duplicates.
+
+Tasks are identified by `label`; an existing task with the same label remains
+user-owned and must not be overwritten.
+
+Marpme must store the previously applied template configuration under `.marpme/`
+and use it as the base of a semantic three-way merge during updates. When the
+template removes an unchanged entry, remove it from the target. When the user and
+template both change the same setting or labeled task, preserve the user value and
+report a configuration conflict.
 
 Never replace the whole file unless it was created by Marpme and no merge is needed.
 
@@ -860,15 +875,10 @@ Do not automatically install the extension.
 
 ## 17.2 Settings
 
-Avoid modifying `.vscode/settings.json` unless required.
-
-If settings are necessary:
-
-- merge only required keys,
-- preserve unrelated keys,
-- warn before replacing conflicting values.
-
-Prefer presentation-local configuration over root workspace configuration.
+Merge template-supplied settings additively. Preserve unrelated keys and existing
+scalar values. Theme paths may point directly to Copier-managed files under
+`.marpme/themes/`, allowing the same settings file to work in the template repository
+and in generated repositories.
 
 ---
 
@@ -1113,6 +1123,8 @@ For repository-level JSON such as:
 
 ```text
 .vscode/extensions.json
+.vscode/settings.json
+.vscode/tasks.json
 ```
 
 perform structured merge.

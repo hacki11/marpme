@@ -18,14 +18,20 @@ def update_environment(vcs_ref: str | None = None) -> UpdateResult:
     copier.get_state(repository)
     vscode = VsCodeService()
     vscode.validate(repository.root)
-    vscode.validate_settings(repository.root)
     with repositories.mutation_lock(repository):
         result = copier.update_repository_environment(
             repository, vcs_ref=None if vcs_ref == "latest" else vcs_ref
         )
-        vscode.ensure_recommendation(repository.root)
-        vscode.ensure_theme_settings(repository.root)
+        state = copier.get_state(repository)
+        configuration = TemplateService(process).vscode_configuration(state)
+        _, configuration_conflicts = vscode.update_template(repository.root, configuration)
         conflicts = repositories.copier_conflicts(repository)
     state = copier.get_state(repository)
     changes = TemplateService(process).changelog_changes(state)
-    return UpdateResult(result.previous_version, result.current_version, conflicts, changes)
+    return UpdateResult(
+        previous_version=result.previous_version,
+        current_version=result.current_version,
+        conflicts=conflicts,
+        changes=changes,
+        configuration_conflicts=configuration_conflicts,
+    )

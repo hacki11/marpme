@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
 
 from packaging.version import InvalidVersion, Version
@@ -66,6 +67,52 @@ class TemplateService:
         if content is None:
             return ()
         return self._parse_changes(content, state.version)
+
+    def vscode_configuration(self, state: TemplateState) -> Mapping[str, str]:
+        """Read optional VS Code integration from the selected template revision."""
+        if not state.source:
+            return {}
+        source_path = Path(state.source).expanduser()
+        if source_path.exists():
+            return self._vscode_from_local(source_path, state.version)
+        return self._vscode_from_remote(state.source, state.version)
+
+    def _vscode_from_local(self, source: Path, version: str | None) -> dict[str, str]:
+        result: dict[str, str] = {}
+        for filename in ("extensions.json", "settings.json", "tasks.json"):
+            content = None
+            if version:
+                for reference in self._references(version):
+                    try:
+                        content = self.process.run_git(
+                            ["show", f"{reference}:.vscode/{filename}"], source, timeout=5
+                        ).stdout
+                        break
+                    except Exception:
+                        continue
+            if content is None:
+                try:
+                    content = (source / ".vscode" / filename).read_text(encoding="utf-8")
+                except OSError:
+                    continue
+            result[filename] = content
+        return result
+
+    def _vscode_from_remote(self, source: str, version: str | None) -> dict[str, str]:
+        references = self._references(version) if version else (None,)
+        with tempfile.TemporaryDirectory(prefix="marpme-vscode-") as temporary:
+            for index, reference in enumerate(references):
+                checkout = Path(temporary) / f"template-{index}"
+                arguments = ["clone", "--depth", "1"]
+                if reference:
+                    arguments.extend(["--branch", reference])
+                arguments.extend([source, str(checkout)])
+                try:
+                    self.process.run_git(arguments, Path.cwd(), timeout=30)
+                except Exception:
+                    continue
+                return self._vscode_from_local(checkout, None)
+        return {}
 
     def _changelog_at_version(self, source: str, version: str) -> str | None:
         source_path = Path(source).expanduser()

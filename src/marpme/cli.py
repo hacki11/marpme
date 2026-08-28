@@ -124,7 +124,7 @@ def new_command(
     console.print(f"[green]✓[/green] Template {template_version or 'version not recorded'} applied")
     console.print(f"[green]✓[/green] Presentation created: {deck_file.parent.as_posix()}")
     if vscode_changed:
-        console.print("[green]✓[/green] VS Code Marp extension recommended")
+        console.print("[green]✓[/green] VS Code configuration merged")
     console.print("\nNext:")
     console.print(f"  edit {deck_file.as_posix()}")
     _update_notice()
@@ -153,6 +153,13 @@ def update_command(
         for conflict in result.conflicts:
             console.print(f"  {conflict.as_posix()}")
         console.print("\nResolve the conflict markers, then commit the result.")
+        raise typer.Exit(code=1)
+    if result.configuration_conflicts:
+        console.print("\n[yellow]! VS Code configuration has conflicts[/yellow]\n")
+        console.print("User values were preserved in:")
+        for conflict in result.configuration_conflicts:
+            console.print(f"  {conflict.as_posix()}")
+        console.print("\nThe template changed the same entries. Review and commit the result.")
         raise typer.Exit(code=1)
     console.print("\n[green]✓[/green] Copier update completed")
     _update_notice()

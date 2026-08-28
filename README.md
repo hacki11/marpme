@@ -54,10 +54,21 @@ the responsibility of Marp/Marpit tooling.
 
 The source must be a versioned Git repository containing a valid `copier.yml`. Copier renders it
 into the repository root and records state in `.marpme/copier-answers.yml`. Shared, upgradeable files
-belong under `.marpme/`. A template may create the first `<name>/deck.md` itself.
-For later decks it should provide a literal `.marpme/starter/` directory; Marpme copies that folder
-without making the new deck part of Copier's managed update surface. If no starter is present,
-Marpme stops with an error rather than creating deck content itself.
+belong under `.marpme/`; themes conventionally live in `.marpme/themes/`. The template must provide
+a literal `.marpme/starter/` directory. Marpme copies that folder for every new deck without making
+the deck part of Copier's managed update surface. If no starter is present, Marpme stops with an
+error rather than creating deck content itself.
+
+Templates may provide `.vscode/extensions.json`, `.vscode/settings.json`, and `.vscode/tasks.json`
+at their repository root. Marpme reads these files from the selected template revision and merges
+missing properties and array entries into the target workspace. Existing scalar settings and tasks
+with an existing label remain user-owned. Templates should exclude `.vscode/` from Copier so Copier
+does not overwrite existing workspace configuration.
+
+Marpme records the applied editor configuration in `.marpme/vscode-template-state.json`. Template
+updates use that baseline for a semantic three-way merge: unchanged template entries can be updated
+or removed, user-only changes survive, and simultaneous edits are reported as configuration
+conflicts while preserving the user's value.
 
 Templates must maintain a versioned, parseable `CHANGELOG.md`. After a template update, Marpme
 shows the bullet-point changes recorded for the installed version when that file is available.

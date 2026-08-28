@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -36,15 +37,15 @@ def test_new_initializes_environment_and_multiple_decks(
     assert first.exit_code == 0, first.output
     assert (in_repository / ".marpme/copier-answers.yml").is_file()
     assert not (in_repository / ".copier-answers.yml").exists()
-    assert (in_repository / ".marpme/theme/company.css").is_file()
+    assert (in_repository / ".marpme/themes/company.css").is_file()
     assert (in_repository / ".marpme/skills/slides/SKILL.md").is_file()
     assert (in_repository / "architecture-review/deck.md").is_file()
     assert "marp-team.marp-vscode" in (in_repository / ".vscode/extensions.json").read_text(
         encoding="utf-8"
     )
     settings = (in_repository / ".vscode/settings.json").read_text(encoding="utf-8")
-    assert "./.marpme/theme/company.css" in settings
-    assert "./.marpme/theme/company-dark.css" in settings
+    assert "./.marpme/themes/company.css" in settings
+    assert (in_repository / ".vscode/tasks.json").is_file()
 
     second = runner.invoke(app, ["--no-update-check", "new", "customer-demo"])
     assert second.exit_code == 0, second.output
@@ -144,11 +145,16 @@ def test_copier_update_applies_new_tag_and_preserves_local_changes(
     git(in_repository, "add", ".")
     git(in_repository, "commit", "-qm", "add deck and local brand rule")
 
-    theme = template_repository / "template/.marpme/theme/company.css"
+    theme = template_repository / "template/.marpme/themes/company.css"
     theme.write_text("/* template v2 */\n", encoding="utf-8")
     (template_repository / "template/.marpme/scripts").mkdir()
     (template_repository / "template/.marpme/scripts/check.sh").write_text(
         "#!/bin/sh\n", encoding="utf-8"
+    )
+    (template_repository / ".vscode/settings.json").write_text(
+        '{"markdown.marp.themes": ["./.marpme/themes/company.css"], '
+        '"markdown.marp.outlineExtension": false}\n',
+        encoding="utf-8",
     )
     (template_repository / "CHANGELOG.md").write_text(
         "# Changelog\n\n## 1.1.0 - 2026-08-26\n\n- Updated company theme.\n\n"
@@ -163,11 +169,13 @@ def test_copier_update_applies_new_tag_and_preserves_local_changes(
     assert update.previous_version == "1.0.0"
     assert update.current_version == "1.1.0"
     assert theme.read_text(encoding="utf-8") == "/* template v2 */\n"
-    assert (in_repository / ".marpme/theme/company.css").read_text(
+    assert (in_repository / ".marpme/themes/company.css").read_text(
         encoding="utf-8"
     ) == "/* template v2 */\n"
     assert "Local brand rule." in skill.read_text(encoding="utf-8")
     assert (in_repository / ".marpme/scripts/check.sh").is_file()
+    settings = (in_repository / ".vscode/settings.json").read_text(encoding="utf-8")
+    assert '"markdown.marp.outlineExtension": false' in settings
     assert update.changes == ("Updated company theme.",)
 
 
@@ -201,6 +209,46 @@ def test_update_displays_changelog_changes(in_repository: Path, template_reposit
     assert updated.exit_code == 0, updated.output
     assert "Changes:" in updated.output
     assert "Added diagram primitives." in updated.output
+
+
+def test_update_reports_vscode_conflict_and_preserves_user_task(
+    in_repository: Path, template_repository: Path
+) -> None:
+    created = runner.invoke(
+        app,
+        [
+            "--no-update-check",
+            "new",
+            "demo",
+            "--template",
+            str(template_repository),
+            "--template-ref",
+            "v1.0.0",
+        ],
+    )
+    assert created.exit_code == 0, created.output
+    target_tasks = in_repository / ".vscode/tasks.json"
+    target = json.loads(target_tasks.read_text(encoding="utf-8"))
+    target["tasks"][0]["command"] = "custom-preview"
+    target_tasks.write_text(json.dumps(target, indent=2) + "\n", encoding="utf-8")
+    git(in_repository, "add", ".")
+    git(in_repository, "commit", "-qm", "customize preview task")
+
+    source_tasks = template_repository / ".vscode/tasks.json"
+    source = json.loads(source_tasks.read_text(encoding="utf-8"))
+    source["tasks"][0]["command"] = "upstream-preview"
+    source_tasks.write_text(json.dumps(source, indent=2) + "\n", encoding="utf-8")
+    git(template_repository, "add", ".")
+    git(template_repository, "commit", "-qm", "change preview task")
+    git(template_repository, "tag", "v1.1.0")
+
+    updated = runner.invoke(app, ["--no-update-check", "update", "--to", "v1.1.0"])
+
+    assert updated.exit_code == 1
+    assert "VS Code configuration has conflicts" in updated.output
+    assert ".vscode/tasks.json" in updated.output
+    rendered = json.loads(target_tasks.read_text(encoding="utf-8"))
+    assert rendered["tasks"][0]["command"] == "custom-preview"
 
 
 def test_status_works_offline(in_repository: Path, template_repository: Path) -> None:
@@ -241,12 +289,12 @@ def test_copier_conflicts_are_reported(in_repository: Path, template_repository:
         ],
     )
     assert created.exit_code == 0, created.output
-    managed = in_repository / ".marpme/theme/company.css"
+    managed = in_repository / ".marpme/themes/company.css"
     managed.write_text("/* local theme */\n", encoding="utf-8")
     git(in_repository, "add", ".")
     git(in_repository, "commit", "-qm", "customize theme")
 
-    upstream = template_repository / "template/.marpme/theme/company.css"
+    upstream = template_repository / "template/.marpme/themes/company.css"
     upstream.write_text("/* upstream theme */\n", encoding="utf-8")
     git(template_repository, "add", ".")
     git(template_repository, "commit", "-qm", "change upstream theme")
@@ -255,7 +303,7 @@ def test_copier_conflicts_are_reported(in_repository: Path, template_repository:
     update = runner.invoke(app, ["--no-update-check", "update", "--to", "v1.1.0"])
     assert update.exit_code == 1
     assert "completed with conflicts" in update.output
-    assert ".marpme/theme/company.css" in update.output
+    assert ".marpme/themes/company.css" in update.output
     rendered = managed.read_text(encoding="utf-8")
     assert "<<<<<<<" in rendered and ">>>>>>>" in rendered
 

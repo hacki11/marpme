@@ -37,6 +37,7 @@ class UpdateResult:
     current_version: str | None
     conflicts: tuple[Path, ...] = ()
     changes: tuple[str, ...] = ()
+    configuration_conflicts: tuple[Path, ...] = ()
 
 
 @dataclass(frozen=True)

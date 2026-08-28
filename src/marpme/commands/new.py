@@ -8,6 +8,7 @@ from marpme.services.copier_service import CopierService
 from marpme.services.decks import DeckService
 from marpme.services.process import ProcessService
 from marpme.services.repository import RepositoryService
+from marpme.services.template import TemplateService
 from marpme.services.vscode import VsCodeService
 
 
@@ -31,7 +32,6 @@ def create_deck(
         )
 
     vscode.validate(repository.root)
-    vscode.validate_settings(repository.root)
     with repositories.mutation_lock(repository):
         repositories.migrate_legacy_metadata(repository)
         initialized = repository.answers_file.is_file()
@@ -50,6 +50,8 @@ def create_deck(
         # The versioned template starter is the only source for new deck content.
         target = decks.target(repository, name)
         deck_file = target / "deck.md" if target.exists() else decks.create(repository, name)
-        vscode_changed = vscode.ensure_recommendation(repository.root)
-        vscode.ensure_theme_settings(repository.root)
+        vscode_changed = False
+        if not initialized:
+            configuration = TemplateService(process).vscode_configuration(state)
+            vscode_changed = vscode.merge_template(repository.root, configuration)
     return deck_file.relative_to(repository.root), state.version, vscode_changed

@@ -37,7 +37,9 @@ def template_repository(tmp_path: Path) -> Path:
     path = tmp_path / "template"
     path.mkdir()
     git(path, "init", "-q")
-    (path / "copier.yml").write_text("_subdirectory: template\n", encoding="utf-8")
+    (path / "copier.yml").write_text(
+        "_subdirectory: template\n_exclude:\n  - .vscode\n", encoding="utf-8"
+    )
     (path / "CHANGELOG.md").write_text(
         "# Changelog\n\n## 1.0.0 - 2026-08-26\n\n- Initial template.\n",
         encoding="utf-8",
@@ -50,8 +52,8 @@ def template_repository(tmp_path: Path) -> Path:
         "{{ _copier_answers|to_nice_yaml -}}\n",
         encoding="utf-8",
     )
-    (template / ".marpme" / "theme").mkdir(parents=True)
-    (template / ".marpme" / "theme" / "company.css").write_text(
+    (template / ".marpme" / "themes").mkdir(parents=True)
+    (template / ".marpme" / "themes" / "company.css").write_text(
         "/* template v1 */\n", encoding="utf-8"
     )
     (template / ".marpme" / "skills" / "slides").mkdir(parents=True)
@@ -61,6 +63,19 @@ def template_repository(tmp_path: Path) -> Path:
     (template / ".marpme" / "starter" / "assets").mkdir(parents=True)
     (template / ".marpme" / "starter" / "deck.md").write_text(
         "---\nmarp: true\ntheme: company\n---\n\n# New presentation\n",
+        encoding="utf-8",
+    )
+    vscode = path / ".vscode"
+    vscode.mkdir()
+    (vscode / "extensions.json").write_text(
+        '{"recommendations": ["marp-team.marp-vscode"]}\n', encoding="utf-8"
+    )
+    (vscode / "settings.json").write_text(
+        '{"markdown.marp.themes": ["./.marpme/themes/company.css"]}\n',
+        encoding="utf-8",
+    )
+    (vscode / "tasks.json").write_text(
+        '{"version": "2.0.0", "tasks": [{"label": "Marp: Preview"}]}\n',
         encoding="utf-8",
     )
     git(path, "add", ".")

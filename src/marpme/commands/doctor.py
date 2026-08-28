@@ -31,17 +31,9 @@ def run_doctor(*, check_remote: bool = True) -> tuple[DoctorCheck, ...]:
     vscode_ok = VsCodeService().is_integrated(repository.root)
     checks.append(
         DoctorCheck(
-            "VS Code recommendation",
+            "VS Code configuration",
             vscode_ok,
-            "" if vscode_ok else "Run marpme new <name> to repair it.",
-        )
-    )
-    themes_ok = VsCodeService().themes_are_integrated(repository.root)
-    checks.append(
-        DoctorCheck(
-            "VS Code themes",
-            themes_ok,
-            "" if themes_ok else "Run marpme new <name> to repair them.",
+            "" if vscode_ok else "No valid template-supplied .vscode configuration found.",
         )
     )
     if check_remote and state is not None:
