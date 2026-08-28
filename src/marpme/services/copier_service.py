@@ -91,7 +91,7 @@ class CopierService:
         path = repository.existing_answers_file
         if not path.is_file():
             raise NotInitializedError(
-                "Marpme is not initialized in this repository.\n\n"
+                "marpme is not initialized in this repository.\n\n"
                 "Create a deck first:\n  marpme new <name>"
             )
         try:
@@ -123,7 +123,7 @@ class CopierService:
             ) from exc
         if any(word in lowered for word in ("clone", "network", "resolve host", "repository")):
             raise TemplateUnavailableError(
-                f"Could not access the Marpme template at {source}.\n\n"
+                f"Could not access the marpme template at {source}.\n\n"
                 "Check your network access and Git credentials, then retry.\n"
                 f"Details: {message}"
             ) from exc

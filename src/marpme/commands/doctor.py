@@ -24,9 +24,9 @@ def run_doctor(*, check_remote: bool = True) -> tuple[DoctorCheck, ...]:
     checks.append(DoctorCheck("Repository", True, str(repository.root)))
     try:
         state = CopierService().get_state(repository)
-        checks.append(DoctorCheck("Marpme metadata", True, state.version or "version not recorded"))
+        checks.append(DoctorCheck("marpme metadata", True, state.version or "version not recorded"))
     except Exception as exc:
-        checks.append(DoctorCheck("Marpme metadata", False, str(exc).splitlines()[0]))
+        checks.append(DoctorCheck("marpme metadata", False, str(exc).splitlines()[0]))
         state = None
     vscode_ok = VsCodeService().is_integrated(repository.root)
     checks.append(

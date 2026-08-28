@@ -21,8 +21,8 @@ class DeckService:
         starter = repository.marpme_dir / "starter"
         if not starter.is_dir() or not (starter / "deck.md").is_file():
             raise CopierFailureError(
-                "The Marpme template did not provide .marpme/starter/deck.md.\n\n"
-                "Use a complete Marpme template release, then retry."
+                "The marpme template did not provide .marpme/starter/deck.md.\n\n"
+                "Use a complete marpme template release, then retry."
             )
         try:
             shutil.copytree(starter, target)

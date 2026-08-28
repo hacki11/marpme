@@ -7,6 +7,7 @@ import pytest
 from conftest import git
 from typer.testing import CliRunner
 
+import marpme.cli as cli
 from marpme.cli import app
 from marpme.commands.status import get_status
 from marpme.commands.update import update_environment
@@ -333,3 +334,33 @@ def test_version_option() -> None:
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     assert result.output.startswith("marpme ")
+
+
+def test_self_update_reports_success_without_binary_details(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class UpdatedReleaseService:
+        def self_update(self) -> str:
+            return "99.0.0"
+
+    monkeypatch.setattr(cli, "ReleaseService", UpdatedReleaseService)
+    result = runner.invoke(app, ["self", "update"])
+
+    assert result.exit_code == 0, result.output
+    assert "✓ marpme update completed: 99.0.0" in result.output
+    assert "download" not in result.output.lower()
+    assert "replac" not in result.output.lower()
+
+
+def test_self_update_reports_current_version_as_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class CurrentReleaseService:
+        def self_update(self) -> str:
+            return cli.__version__
+
+    monkeypatch.setattr(cli, "ReleaseService", CurrentReleaseService)
+    result = runner.invoke(app, ["self", "update"])
+
+    assert result.exit_code == 0, result.output
+    assert f"✓ marpme {cli.__version__} is already current." in result.output

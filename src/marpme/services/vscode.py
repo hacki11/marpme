@@ -530,15 +530,15 @@ class VsCodeService:
         try:
             raw: Any = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-            raise InvalidConfigError(f"Invalid Marpme VS Code state in {path}: {exc}") from exc
+            raise InvalidConfigError(f"Invalid marpme VS Code state in {path}: {exc}") from exc
         if not isinstance(raw, dict) or raw.get("version") != VSCODE_STATE_VERSION:
-            raise InvalidConfigError(f"Unsupported Marpme VS Code state in {path}.")
+            raise InvalidConfigError(f"Unsupported marpme VS Code state in {path}.")
         files = raw.get("files")
         if not isinstance(files, dict) or any(
             filename not in VSCODE_FILES or not isinstance(content, dict)
             for filename, content in files.items()
         ):
-            raise InvalidConfigError(f"Invalid Marpme VS Code state in {path}.")
+            raise InvalidConfigError(f"Invalid marpme VS Code state in {path}.")
         return files
 
     @classmethod

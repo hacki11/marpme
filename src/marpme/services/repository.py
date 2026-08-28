@@ -84,7 +84,7 @@ class RepositoryService:
             shown = "\n".join(f"  {path}" for path in conflicts)
             raise InvalidRepositoryStateError(
                 "The repository has unresolved Git conflicts.\n\n"
-                f"Resolve them before updating Marpme:\n{shown}"
+                f"Resolve them before updating marpme:\n{shown}"
             )
 
     @contextmanager
@@ -107,7 +107,7 @@ class RepositoryService:
                 descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
             else:
                 raise InvalidRepositoryStateError(
-                    f"Another Marpme operation is using this repository ({lock_path})."
+                    f"Another marpme operation is using this repository ({lock_path})."
                 ) from None
         try:
             with os.fdopen(descriptor, "w", encoding="utf-8") as stream:

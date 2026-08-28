@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$ManifestUrl = $(if ($env:MARPME_RELEASE_MANIFEST) { $env:MARPME_RELEASE_MANIFEST } else { "https://github.com/hacki11/marpme/releases/latest/download/latest.json" }),
-    [string]$InstallDirectory = $(if ($env:MARPME_INSTALL_DIR) { $env:MARPME_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA "Marpme\bin" })
+    [string]$InstallDirectory = $(if ($env:MARPME_INSTALL_DIR) { $env:MARPME_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA "marpme\bin" })
 )
 
 $ErrorActionPreference = "Stop"
@@ -25,13 +25,13 @@ try {
     Invoke-WebRequest -Uri $artifact.url -OutFile $temporary -UseBasicParsing
     $actualHash = (Get-FileHash -Path $temporary -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualHash -ne $artifact.sha256.ToLowerInvariant()) {
-        throw "Checksum verification failed; Marpme was not installed."
+        throw "Checksum verification failed; marpme was not installed."
     }
     New-Item -ItemType Directory -Path $InstallDirectory -Force | Out-Null
     $installPath = Join-Path $InstallDirectory "marpme.exe"
     Move-Item -LiteralPath $temporary -Destination $installPath -Force
 
-    $metadataDirectory = Join-Path $env:LOCALAPPDATA "Marpme"
+    $metadataDirectory = Join-Path $env:LOCALAPPDATA "marpme"
     New-Item -ItemType Directory -Path $metadataDirectory -Force | Out-Null
     @{
         owner = "marpme"
@@ -45,7 +45,7 @@ try {
         [Environment]::SetEnvironmentVariable("Path", (($entries + $InstallDirectory) -join ";"), "User")
         Write-Host "Added $InstallDirectory to your user PATH. Open a new terminal."
     }
-    Write-Host "Marpme installed at $installPath"
+    Write-Host "marpme installed at $installPath"
     Write-Host "Run: marpme --version"
 }
 finally {

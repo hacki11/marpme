@@ -49,7 +49,7 @@ app = typer.Typer(
     pretty_exceptions_enable=False,
     add_completion=False,
 )
-self_app = typer.Typer(help="Manage the installed Marpme CLI.")
+self_app = typer.Typer(help="Manage the installed marpme CLI.")
 app.add_typer(self_app, name="self")
 console = Console()
 error_console = Console(stderr=True)
@@ -108,13 +108,13 @@ def _update_notice() -> None:
     if not _check_updates:
         return
     try:
-        with _activity("Checking for Marpme updates..."):
+        with _activity("Checking for marpme updates..."):
             latest = ReleaseService().available_update()
     except Exception:
         return
     if latest:
         console.print()
-        console.print(f"[yellow]Marpme {latest} is available.[/yellow]")
+        console.print(f"[yellow]marpme {latest} is available.[/yellow]")
         console.print("Run [bold]marpme self update[/bold] to upgrade.")
 
 
@@ -193,11 +193,11 @@ def status_command(
 ) -> None:
     """Show local template and deck state."""
     try:
-        with _activity("Reading Marpme repository status...") as progress:
+        with _activity("Reading marpme repository status...") as progress:
             status = get_status(check_remote=not offline, progress=progress)
     except Exception as exc:
         _failure(exc)
-    table = Table(title="Marpme", box=None, show_header=False, padding=(0, 2))
+    table = Table(title="marpme", box=None, show_header=False, padding=(0, 2))
     table.add_row("CLI", status.cli_version)
     table.add_row("Template", status.template_version or "unknown")
     table.add_row("Latest", status.latest_version or "unknown (offline or unavailable)")
@@ -228,7 +228,7 @@ def doctor_command(
         checks = run_doctor(check_remote=not offline)
     except Exception as exc:
         _failure(exc)
-    console.print("[bold]Marpme doctor[/bold]\n")
+    console.print("[bold]marpme doctor[/bold]\n")
     failed = False
     for check in checks:
         marker = "[green]✓[/green]" if check.ok else "[red]✗[/red]"
@@ -242,16 +242,18 @@ def doctor_command(
 
 @self_app.command("update")
 def self_update_command() -> None:
-    """Update a canonical Marpme installation."""
+    """Update a canonical marpme installation."""
+    # Resolve terminal styling before the executable update is scheduled. A
+    # one-file PyInstaller archive must not be accessed through Rich afterward.
+    success = "\033[32m✓\033[0m" if console.is_terminal else "✓"
     try:
         version = ReleaseService().self_update()
     except Exception as exc:
         _failure(exc)
     if version == __version__:
-        console.print(f"Marpme {version} is already current.")
+        sys.stdout.write(f"{success} marpme {version} is already current.\n")
     else:
         # Do not render with Rich after scheduling replacement: one-file PyInstaller
         # builds may lazily import from their archive, which is about to be replaced.
-        sys.stdout.write(f"Marpme {version} downloaded.\n")
-        sys.stdout.write("The executable will be replaced after this process exits.\n")
+        sys.stdout.write(f"{success} marpme update completed: {version}\n")
         sys.stdout.flush()

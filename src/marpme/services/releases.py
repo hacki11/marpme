@@ -63,7 +63,7 @@ class ReleaseService:
         }.get(machine)
         os_name = {"windows": "windows", "linux": "linux"}.get(system)
         if not os_name or not architecture:
-            raise ReleaseError(f"No Marpme release is available for {system}/{machine}.")
+            raise ReleaseError(f"No marpme release is available for {system}/{machine}.")
         return f"{os_name}-{architecture}"
 
     def fetch_manifest(self, *, timeout: float = 10) -> ReleaseManifest:
@@ -75,7 +75,7 @@ class ReleaseService:
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 payload = json.load(response)
         except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
-            raise ReleaseError(f"Could not fetch the Marpme release manifest: {exc}") from exc
+            raise ReleaseError(f"Could not fetch the marpme release manifest: {exc}") from exc
         try:
             version = str(payload["version"])
             Version(version)
@@ -91,7 +91,7 @@ class ReleaseService:
             ):
                 raise ValueError("invalid SHA-256")
         except (KeyError, TypeError, ValueError, InvalidVersion) as exc:
-            raise ReleaseError(f"Invalid Marpme release manifest: {exc}") from exc
+            raise ReleaseError(f"Invalid marpme release manifest: {exc}") from exc
         return ReleaseManifest(version=version, artifacts=artifacts)
 
     def available_update(self, *, force: bool = False) -> str | None:
@@ -117,8 +117,8 @@ class ReleaseService:
     def self_update(self) -> str:
         if os.environ.get("MARPME_EPHEMERAL") == "1":
             raise InstallationNotOwnedError(
-                "This Marpme instance was launched through npx/pnpm.\n\n"
-                "Install Marpme persistently to enable self-update:\n"
+                "This marpme instance was launched through npx/pnpm.\n\n"
+                "Install marpme persistently to enable self-update:\n"
                 "  Windows: install.ps1\n  Linux/WSL: install.sh"
             )
         metadata = self._owned_installation()
@@ -141,16 +141,16 @@ class ReleaseService:
             metadata = json.loads(self.install_metadata.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise InstallationNotOwnedError(
-                "This installation is not recorded as Marpme-owned.\n\n"
+                "This installation is not recorded as marpme-owned.\n\n"
                 "Reinstall with the canonical install script to enable self-update."
             ) from exc
         if not isinstance(metadata, dict) or metadata.get("owner") != "marpme":
             raise InstallationNotOwnedError(
-                "Refusing to update an installation not owned by Marpme."
+                "Refusing to update an installation not owned by marpme."
             )
         install_path = metadata.get("install_path")
         if not isinstance(install_path, str) or not Path(install_path).is_file():
-            raise InstallationNotOwnedError("The recorded Marpme executable does not exist.")
+            raise InstallationNotOwnedError("The recorded marpme executable does not exist.")
         executable = Path(sys.executable).resolve()
         # Frozen builds run from the installed executable. Source invocations are allowed
         # only in tests that explicitly point metadata at sys.executable.
@@ -179,7 +179,7 @@ class ReleaseService:
                 output.flush()
                 os.fsync(output.fileno())
             if digest.hexdigest().lower() != artifact.sha256:
-                raise ReleaseError("Downloaded Marpme artifact failed SHA-256 verification.")
+                raise ReleaseError("Downloaded marpme artifact failed SHA-256 verification.")
             temporary.chmod(temporary.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
             if platform.system().lower() == "windows":
                 self._schedule_windows_replacement(temporary, install_path)

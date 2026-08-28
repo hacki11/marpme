@@ -1,4 +1,4 @@
-"""Marpme command-line application."""
+"""marpme command-line application."""
 
 from importlib.metadata import PackageNotFoundError, version
 

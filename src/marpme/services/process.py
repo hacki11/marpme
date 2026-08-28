@@ -14,7 +14,7 @@ class ProcessService:
     def require_git(self) -> None:
         if not self.has_git():
             raise GitMissingError(
-                "Git is required for Marpme template operations.\n\n"
+                "Git is required for marpme template operations.\n\n"
                 "Install Git and retry:\n  https://git-scm.com/"
             )
 

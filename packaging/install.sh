@@ -8,7 +8,7 @@ metadata_dir="${data_home}/marpme"
 
 case "$(uname -s)" in
   Linux) os_name=linux ;;
-  *) printf '%s\n' "Marpme supports Linux and WSL through this installer." >&2; exit 1 ;;
+  *) printf '%s\n' "marpme supports Linux and WSL through this installer." >&2; exit 1 ;;
 esac
 
 case "$(uname -m)" in
@@ -39,7 +39,7 @@ download="${temporary_dir}/marpme"
 curl -fsSL --retry 3 --connect-timeout 10 "$artifact_url" -o "$download"
 actual_sha=$(sha256sum "$download" | awk '{print $1}')
 if [ "$actual_sha" != "$artifact_sha" ]; then
-  printf '%s\n' "Checksum verification failed; Marpme was not installed." >&2
+  printf '%s\n' "Checksum verification failed; marpme was not installed." >&2
   exit 1
 fi
 
@@ -54,7 +54,7 @@ cat > "${metadata_dir}/installation.json" <<EOF
 }
 EOF
 
-printf 'Marpme installed at %s\n' "${install_dir}/marpme"
+printf 'marpme installed at %s\n' "${install_dir}/marpme"
 case ":${PATH}:" in
   *":${install_dir}:"*) ;;
   *) printf 'Add %s to PATH, then run: marpme --version\n' "$install_dir" ;;

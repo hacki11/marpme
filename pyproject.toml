@@ -9,7 +9,7 @@ description = "Add and maintain company-standard Marp presentations in a reposit
 readme = "README.md"
 requires-python = ">=3.13"
 license = { text = "MIT" }
-authors = [{ name = "Marpme maintainers" }]
+authors = [{ name = "marpme maintainers" }]
 dependencies = [
   "click>=8.1.8",
   "copier>=9.4,<10",
