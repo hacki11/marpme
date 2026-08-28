@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import sys
 import traceback
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from typing import Annotated
 
 import click
@@ -55,6 +57,21 @@ _verbose = False
 _check_updates = True
 
 
+@contextmanager
+def _activity(initial: str) -> Iterator[Callable[[str], None]]:
+    """Show a live spinner in terminals and durable stage lines in logs."""
+    if console.is_terminal:
+        with console.status(initial, spinner="dots") as status:
+            yield lambda message: status.update(message)
+        return
+    console.print(initial)
+
+    def report(message: str) -> None:
+        console.print(message)
+
+    yield report
+
+
 @app.callback(invoke_without_command=True)
 def main_options(
     verbose: Annotated[
@@ -91,7 +108,8 @@ def _update_notice() -> None:
     if not _check_updates:
         return
     try:
-        latest = ReleaseService().available_update()
+        with _activity("Checking for Marpme updates..."):
+            latest = ReleaseService().available_update()
     except Exception:
         return
     if latest:
@@ -115,9 +133,10 @@ def new_command(
     """Create a new presentation in the current repository."""
     try:
         console.print(f'Creating presentation [bold]"{name}"[/bold]')
-        deck_file, template_version, vscode_changed = create_deck(
-            name, source=template, vcs_ref=template_ref
-        )
+        with _activity("Detecting Git repository...") as progress:
+            deck_file, template_version, vscode_changed = create_deck(
+                name, source=template, vcs_ref=template_ref, progress=progress
+            )
     except Exception as exc:
         _failure(exc)
     console.print("[green]✓[/green] Repository detected")
@@ -138,7 +157,8 @@ def update_command(
 ) -> None:
     """Apply a newer repository template using Copier."""
     try:
-        result = update_environment(to)
+        with _activity("Checking repository and template state...") as progress:
+            result = update_environment(to, progress=progress)
     except Exception as exc:
         _failure(exc)
     console.print(f"Current template: {result.previous_version or 'unknown'}")
@@ -173,7 +193,8 @@ def status_command(
 ) -> None:
     """Show local template and deck state."""
     try:
-        status = get_status(check_remote=not offline)
+        with _activity("Reading Marpme repository status...") as progress:
+            status = get_status(check_remote=not offline, progress=progress)
     except Exception as exc:
         _failure(exc)
     table = Table(title="Marpme", box=None, show_header=False, padding=(0, 2))

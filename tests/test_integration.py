@@ -35,6 +35,8 @@ def test_new_initializes_environment_and_multiple_decks(
         ],
     )
     assert first.exit_code == 0, first.output
+    assert "Fetching and applying the presentation template" in first.output
+    assert "Loading template VS Code configuration" in first.output
     assert (in_repository / ".marpme/copier-answers.yml").is_file()
     assert not (in_repository / ".copier-answers.yml").exists()
     assert (in_repository / ".marpme/themes/company.css").is_file()
@@ -207,6 +209,8 @@ def test_update_displays_changelog_changes(in_repository: Path, template_reposit
     updated = runner.invoke(app, ["--no-update-check", "update", "--to", "v1.1.0"])
 
     assert updated.exit_code == 0, updated.output
+    assert "Fetching and applying the template update" in updated.output
+    assert "Reading template changelog" in updated.output
     assert "Changes:" in updated.output
     assert "Added diagram primitives." in updated.output
 
@@ -272,6 +276,8 @@ def test_status_works_offline(in_repository: Path, template_repository: Path) ->
     assert status.decks == ("demo",)
     rendered = runner.invoke(app, ["--no-update-check", "status", "--offline"])
     assert rendered.exit_code == 0
+    assert "Reading installed template state" in rendered.output
+    assert "Finding presentations" in rendered.output
     assert "unknown (offline or unavailable)" in rendered.output
 
 

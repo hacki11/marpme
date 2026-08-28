@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from marpme import __version__
@@ -17,8 +18,17 @@ class Status:
     decks: tuple[str, ...]
 
 
-def get_status(*, check_remote: bool = True) -> Status:
+def get_status(
+    *, check_remote: bool = True, progress: Callable[[str], None] | None = None
+) -> Status:
+    report = progress or (lambda _message: None)
+    report("Detecting Git repository...")
     repository = RepositoryService().find()
+    report("Reading installed template state...")
     state = CopierService().get_state(repository)
+    if check_remote:
+        report("Checking the template repository for newer releases...")
     latest = TemplateService().latest_version(state) if check_remote else None
-    return Status(__version__, state.version, latest, DeckService().list(repository))
+    report("Finding presentations...")
+    decks = DeckService().list(repository)
+    return Status(__version__, state.version, latest, decks)

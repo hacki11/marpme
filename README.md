@@ -50,6 +50,9 @@ option, `MARPME_TEMPLATE_SOURCE`, then the compiled default.
 Marpme owns scaffolding, template lifecycle, and repository/editor integration. Rendering remains
 the responsibility of Marp/Marpit tooling.
 
+Long-running Git, Copier, and network operations show a live spinner with the current stage in an
+interactive terminal. Redirected output and CI logs receive the same stages as ordinary lines.
+
 ## Template contract
 
 The source must be a versioned Git repository containing a valid `copier.yml`. Copier renders it
