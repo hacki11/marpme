@@ -42,6 +42,41 @@ marpme update --to v1.7.0
 marpme self update
 ```
 
+## JSON output
+
+Every command supports `--json` for AI agents, scripts, and other non-interactive callers. The
+option may be placed globally or on the command:
+
+```console
+marpme --json status
+marpme status --json
+marpme new architecture-review --json
+```
+
+JSON mode writes exactly one JSON object to stdout and suppresses spinners, progress stages, tables,
+and Rich formatting. Successful results use a versioned envelope:
+
+```json
+{
+  "schema_version": 1,
+  "ok": true,
+  "command": "status",
+  "data": {
+    "cli_version": "1.2.2",
+    "template_version": "0.5.0",
+    "latest_template_version": "0.5.0",
+    "template_update_available": false,
+    "decks": ["architecture-review"],
+    "offline": false,
+    "cli_update": {"enabled": true, "available": false}
+  }
+}
+```
+
+Operational failures retain a nonzero exit code and return `ok: false` with a structured `error`
+containing its type and message. Update conflicts and failed doctor checks also include their full
+structured result under `data` so an agent can decide how to recover.
+
 The default template is `git@github.com:hacki11/marp-template.git`. It uses your normal Git/SSH
 configuration and does not ask marpme for a GitHub password. For local template development, pass
 `--template ./path/to/template` and optionally `--template-ref v1.0.0`. Precedence is command-line

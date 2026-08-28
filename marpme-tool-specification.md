@@ -1069,13 +1069,25 @@ marpme --verbose ...
 
 for detailed diagnostics.
 
-Optionally support:
+All commands that produce operational output must support:
 
 ```bash
 marpme --json ...
 ```
 
-later for automation.
+The option may also appear on the leaf command, for example `marpme status --json`.
+JSON mode is intended for AI agents, automation, and editor integrations. It must:
+
+- write exactly one JSON object to stdout,
+- suppress human-oriented progress, tables, and terminal formatting on stdout,
+- use a versioned envelope containing `schema_version`, `ok`, `command`, and `data`,
+- represent failures with `ok: false`, an `error` object containing `type` and
+  `message`, and the command's normal nonzero exit code,
+- include structured conflict or diagnostic data when a command partially completes,
+- keep paths and lists as separate JSON values rather than embedding formatted prose.
+
+Release-update availability should be represented inside the command's `data`
+object so the result remains a single JSON document.
 
 ---
 

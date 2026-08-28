@@ -336,6 +336,94 @@ def test_version_option() -> None:
     assert result.output.startswith("marpme ")
 
 
+def test_json_output_for_repository_commands(
+    in_repository: Path, template_repository: Path
+) -> None:
+    created = runner.invoke(
+        app,
+        [
+            "--no-update-check",
+            "new",
+            "agent-demo",
+            "--template",
+            str(template_repository),
+            "--template-ref",
+            "v1.0.0",
+            "--json",
+        ],
+    )
+    assert created.exit_code == 0, created.output
+    created_payload = json.loads(created.output)
+    assert created_payload == {
+        "schema_version": 1,
+        "ok": True,
+        "command": "new",
+        "data": {
+            "name": "agent-demo",
+            "deck_file": "agent-demo/deck.md",
+            "presentation_directory": "agent-demo",
+            "template_version": "1.0.0",
+            "vscode_configuration_changed": True,
+            "cli_update": {"enabled": False, "available": False},
+        },
+    }
+
+    status_result = runner.invoke(
+        app, ["--no-update-check", "status", "--offline", "--json"]
+    )
+    assert status_result.exit_code == 0, status_result.output
+    status_payload = json.loads(status_result.output)
+    assert status_payload["command"] == "status"
+    assert status_payload["data"]["decks"] == ["agent-demo"]
+    assert status_payload["data"]["offline"] is True
+
+    doctor_result = runner.invoke(
+        app, ["--no-update-check", "doctor", "--offline", "--json"]
+    )
+    assert doctor_result.exit_code == 0, doctor_result.output
+    doctor_payload = json.loads(doctor_result.output)
+    assert doctor_payload["command"] == "doctor"
+    assert all(check["ok"] for check in doctor_payload["data"]["checks"])
+
+    git(in_repository, "add", ".")
+    git(in_repository, "commit", "-qm", "create agent demo")
+    update_result = runner.invoke(
+        app, ["--no-update-check", "update", "--to", "v1.0.0", "--json"]
+    )
+    assert update_result.exit_code == 0, update_result.output
+    update_payload = json.loads(update_result.stdout)
+    assert update_payload["command"] == "update"
+    assert update_payload["data"]["current_version"] == "1.0.0"
+    assert update_payload["data"]["conflicts"] == []
+
+
+def test_json_error_is_single_parseable_document(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(app, ["status", "--json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.output)
+    assert payload["schema_version"] == 1
+    assert payload["ok"] is False
+    assert payload["command"] == "status"
+    assert payload["error"]["type"].endswith("Error")
+    assert payload["error"]["message"]
+
+
+def test_json_version_output() -> None:
+    result = runner.invoke(app, ["--json", "--version"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == {
+        "schema_version": 1,
+        "ok": True,
+        "command": "version",
+        "data": {"version": cli.__version__},
+    }
+
+
 def test_self_update_reports_success_without_binary_details(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -364,3 +452,24 @@ def test_self_update_reports_current_version_as_success(
 
     assert result.exit_code == 0, result.output
     assert f"✓ marpme {cli.__version__} is already current." in result.output
+
+
+def test_self_update_json_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    class UpdatedReleaseService:
+        def self_update(self) -> str:
+            return "99.0.0"
+
+    monkeypatch.setattr(cli, "ReleaseService", UpdatedReleaseService)
+    result = runner.invoke(app, ["self", "update", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == {
+        "schema_version": 1,
+        "ok": True,
+        "command": "self update",
+        "data": {
+            "version": "99.0.0",
+            "previous_version": cli.__version__,
+            "updated": True,
+        },
+    }
