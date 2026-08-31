@@ -6,6 +6,22 @@ install_dir=${MARPME_INSTALL_DIR:-"${HOME}/.local/bin"}
 data_home=${XDG_DATA_HOME:-"${HOME}/.local/share"}
 metadata_dir="${data_home}/marpme"
 
+print_banner() {
+  printf '%s\n' \
+    '' \
+    '      __  ___' \
+    '     /  |/  /  marpme installer' \
+    '    / /|_/ /   github.com/hacki11/marpme' \
+    '   /_/  /_/' \
+    ''
+}
+
+status() {
+  printf '  > %s\n' "$1"
+}
+
+print_banner
+
 case "$(uname -s)" in
   Linux) os_name=linux ;;
   *) printf '%s\n' "marpme supports Linux and WSL through this installer." >&2; exit 1 ;;
@@ -18,14 +34,18 @@ case "$(uname -m)" in
 esac
 
 platform_key="${os_name}-${architecture}"
+status "detected ${os_name}/${architecture}"
+
 temporary_dir=$(mktemp -d)
 trap 'rm -rf "$temporary_dir"' EXIT HUP INT TERM
 manifest_file="${temporary_dir}/latest.json"
+status "fetching latest release manifest..."
 curl -fsSL --retry 3 --connect-timeout 10 "$manifest_url" -o "$manifest_file"
 
 # The release manifest has a deliberately small schema. Flattening it makes extraction portable
 # without requiring jq, Python, or Node on the target machine.
 manifest=$(tr -d '\n\r' < "$manifest_file")
+version=$(printf '%s' "$manifest" | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
 artifact_block=$(printf '%s' "$manifest" | sed -n "s/.*\"${platform_key}\"[[:space:]]*:[[:space:]]*{\([^}]*\)}.*/\1/p")
 artifact_url=$(printf '%s' "$artifact_block" | sed -n 's/.*"url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
 artifact_sha=$(printf '%s' "$artifact_block" | sed -n 's/.*"sha256"[[:space:]]*:[[:space:]]*"\([0-9a-fA-F]*\)".*/\1/p' | tr 'A-F' 'a-f')
@@ -36,7 +56,14 @@ if [ -z "$artifact_url" ] || [ "${#artifact_sha}" -ne 64 ]; then
 fi
 
 download="${temporary_dir}/marpme"
+case "$version" in
+  v*) display_version=$version ;;
+  '') display_version='latest release' ;;
+  *) display_version="v${version}" ;;
+esac
+status "downloading ${display_version}..."
 curl -fsSL --retry 3 --connect-timeout 10 "$artifact_url" -o "$download"
+status "verifying checksum..."
 actual_sha=$(sha256sum "$download" | awk '{print $1}')
 if [ "$actual_sha" != "$artifact_sha" ]; then
   printf '%s\n' "Checksum verification failed; marpme was not installed." >&2
@@ -54,8 +81,9 @@ cat > "${metadata_dir}/installation.json" <<EOF
 }
 EOF
 
-printf 'marpme installed at %s\n' "${install_dir}/marpme"
+status "installed marpme to ${install_dir}/marpme"
+printf '\n'
 case ":${PATH}:" in
-  *":${install_dir}:"*) ;;
-  *) printf 'Add %s to PATH, then run: marpme --version\n' "$install_dir" ;;
+  *":${install_dir}:"*) status "ready. run 'marpme' to get started." ;;
+  *) status "one last step: add ${install_dir} to PATH, then run 'marpme'." ;;
 esac

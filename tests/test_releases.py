@@ -22,6 +22,56 @@ def test_platform_key_is_supported() -> None:
     }
 
 
+@pytest.mark.skipif(platform.system() != "Linux", reason="POSIX installer targets Linux")
+def test_posix_installer_reports_progress(tmp_path: Path) -> None:
+    artifact = tmp_path / "release-artifact"
+    artifact.write_bytes(b"standalone executable")
+    digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    manifest = tmp_path / "latest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "version": "99.0.0",
+                "artifacts": {
+                    "linux-x86_64": {
+                        "url": artifact.as_uri(),
+                        "sha256": digest,
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    install_directory = tmp_path / "bin"
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "HOME": str(tmp_path),
+            "MARPME_INSTALL_DIR": str(install_directory),
+            "MARPME_RELEASE_MANIFEST": manifest.as_uri(),
+            "PATH": f"{install_directory}{os.pathsep}{environment['PATH']}",
+            "XDG_DATA_HOME": str(tmp_path / "share"),
+        }
+    )
+
+    result = subprocess.run(
+        ["sh", str(Path(__file__).parents[1] / "packaging" / "install.sh")],
+        check=True,
+        capture_output=True,
+        env=environment,
+        text=True,
+    )
+
+    assert "marpme installer" in result.stdout
+    assert "  > detected linux/x86_64" in result.stdout
+    assert "  > fetching latest release manifest..." in result.stdout
+    assert "  > downloading v99.0.0..." in result.stdout
+    assert "  > verifying checksum..." in result.stdout
+    assert f"  > installed marpme to {install_directory / 'marpme'}" in result.stdout
+    assert "  > ready. run 'marpme' to get started." in result.stdout
+    assert (install_directory / "marpme").read_bytes() == artifact.read_bytes()
+
+
 def test_manifest_parsing_and_checksum_replacement(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
