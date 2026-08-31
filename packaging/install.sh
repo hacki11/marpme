@@ -11,7 +11,7 @@ print_banner() {
     '' \
     '      __  ___' \
     '     /  |/  /  marpme installer' \
-    '    / /|_/ /   github.com/hacki11/marpme' \
+    '    / /|_/ /' \
     '   /_/  /_/' \
     ''
 }
