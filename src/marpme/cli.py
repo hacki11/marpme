@@ -12,6 +12,7 @@ import typer
 from packaging.version import InvalidVersion, Version
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 from typer.core import TyperGroup
 
 from marpme import __version__
@@ -57,6 +58,12 @@ error_console = Console(stderr=True)
 _verbose = False
 _check_updates = True
 _json_output = False
+
+
+def _version_text() -> Text:
+    text = Text("marpme ")
+    text.append(__version__, style="repr.number")
+    return text
 
 
 @contextmanager
@@ -106,7 +113,7 @@ def main_options(
         if _json_output:
             _emit_json("version", {"version": __version__})
         else:
-            console.print(f"marpme {__version__}")
+            console.print(_version_text())
         raise typer.Exit()
 
 

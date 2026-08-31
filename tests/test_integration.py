@@ -334,6 +334,15 @@ def test_version_option() -> None:
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     assert result.output.startswith("marpme ")
+    version_text = cli._version_text()
+    assert version_text.plain == f"marpme {cli.__version__}"
+    assert len(version_text.spans) == 1
+    span = version_text.spans[0]
+    assert (span.start, span.end, span.style) == (
+        len("marpme "),
+        len("marpme ") + len(cli.__version__),
+        "repr.number",
+    )
 
 
 def test_json_output_for_repository_commands(
